@@ -1,7 +1,7 @@
 import Type, { Static } from "typebox";
 
 const GetHelloSchema = Type.Object({
-    name: Type.Required(Type.String({minLength: 1}))
+    name: Type.String({minLength: 1})
 })
 
 export const AppSchema = {
