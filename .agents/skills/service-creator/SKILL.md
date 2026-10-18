@@ -7,10 +7,11 @@ description: >-
 
 # Service Creator Skill
 
-This skill enforces ProxyGuard's core service rule:
+This skill enforces ProxyGuard's core service rules:
 
-1. **`find-<feature>.service.ts`** is the ONLY multi-method service, and it has **strictly two methods**: `findAll()` and `findOne(id)`.
-2. **All other services** must be **Single-Action Classes** with **exactly one public method**: `handle(dto)`.
+1. **`find-<feature>.service.ts` is OPTIONAL**: Only features requiring read/query operations (CRUD features listing items or finding by ID) need a find service. If a feature does not query collections (e.g. an auth feature with only login/signup), omit the find service.
+2. If `find-<feature>.service.ts` is present, it is the ONLY multi-method service permitted, and it has **strictly two methods**: `findAll()` and `findOne(id)`.
+3. **All other services** must be **Single-Action Classes** with **exactly one public method**: `handle(dto)`.
 
 ---
 
@@ -20,10 +21,10 @@ This skill enforces ProxyGuard's core service rule:
 Are you adding a service in src/features/<feature>/services/?
   │
   ├── Is it querying a list of items or an item by ID?
-  │     └── YES ➔ Update or use `find-<feature>.service.ts`
-  │               Methods: findAll(filter), findOne(id)
+  │     └── YES ➔ Update or create `find-<feature>.service.ts`
+  │               Methods: ONLY findAll(filter) and findOne(id)
   │
-  └── Is it performing any other action (create, update, delete, lease, ban, sync, check)?
+  └── Is it performing any other action (create, update, delete, lease, ban, sync, login, check)?
         └── YES ➔ Create a new Single-Action Service:
                   `<action>-<feature>.service.ts`
                   Method: ONLY `handle(dto: ActionDto): Promise<Result>`
@@ -33,7 +34,7 @@ Are you adding a service in src/features/<feature>/services/?
 
 ## Rules for Single-Action Services
 
-1. **File Naming**: `<action>-<feature>.service.ts` (e.g. `lease-proxy.service.ts`, `report-ban.service.ts`, `sync-account.service.ts`).
+1. **File Naming**: `<action>-<feature>.service.ts` (e.g. `lease-proxy.service.ts`, `report-ban.service.ts`, `sync-account.service.ts`, `login-auth.service.ts`).
 2. **Method Signature**: Exactly one public method named `handle`:
    ```typescript
    async handle(dto: ActionDto): Promise<ActionResult>

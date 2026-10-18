@@ -4,9 +4,33 @@ These rules are strictly enforced across the entire ProxyGuard codebase. Coding 
 
 ---
 
-## Rule 1: Single-Action Services (Mandatory)
+## Rule 1: Mandatory Controller Inheritance & Single Controller Constraint
 
-Except for `find-{feature}.service.ts`, **every service class in `src/features/<feature>/services/` MUST be a single-action class containing ONLY ONE public method named `handle()`**:
+- **Every feature controller MUST extend the abstract `Controller` class**:
+  ```typescript
+  import { Controller } from '../../shared/controllers/controller.js';
+
+  export class FeatureController extends Controller {
+    constructor(...) {
+      super();
+    }
+  }
+  ```
+- **A feature MUST have EXACTLY ONE controller**: Never create multiple controllers within a single feature. All endpoints for that feature are handled by `<feature>.controller.ts`.
+
+---
+
+## Rule 2: Controller is Strictly a Direct Route Mapper
+
+- **Zero Business Logic**: Controllers never perform calculations, direct database queries, or cache manipulations.
+- **1:1 Route Mapping**: Every method on the controller corresponds directly to a route endpoint mapped in `<feature>.routes.ts`.
+- **Pure Data Handoff**: The controller method extracts data from the request (`request.body`, `request.params`, `request.query`, headers), forwards it to the appropriate service (`service.handle(dto)` or `findService.findAll()` / `findService.findOne()`), and sends the response (`reply.status(...).send(...)`).
+
+---
+
+## Rule 3: Single-Action Services (Mandatory)
+
+Except for `find-{feature}.service.ts` (when present), **every service class in `src/features/<feature>/services/` MUST be a single-action class containing ONLY ONE public method named `handle()`**:
 
 ```typescript
 // ✅ CORRECT: Single action class with only handle()
@@ -31,33 +55,16 @@ export class ProxyService {
 
 ---
 
-## Rule 2: Query Service Scope (`find-*.service.ts`)
+## Rule 4: Query Service Scope (`find-*.service.ts`) is Optional
 
-The query service `src/features/<feature>/services/find-<feature>.service.ts` is the ONLY service permitted to have more than one method, and it must contain **ONLY TWO methods**:
-
-1. `findAll(...)`
-2. `findOne(id: string)`
-
-```typescript
-// ✅ CORRECT
-export class FindProxyService {
-  constructor(private readonly em: EntityManager) {}
-  async findAll(appId: string): Promise<ProxyEntity[]> { ... }
-  async findOne(id: string): Promise<ProxyEntity | null> { ... }
-}
-
-// ❌ FORBIDDEN: Adding custom query methods or action methods
-export class FindProxyService {
-  async findAll() {}
-  async findOne() {}
-  async findByIp() {} // FORBIDDEN: Create a single-action service or filter inside findAll
-  async deleteOne() {} // FORBIDDEN: Create delete-proxy.service.ts
-}
-```
+- **`find-<feature>.service.ts` is NOT mandatory for every feature**: If a feature is not CRUD and does not query lists or single items by ID (e.g. an auth feature with only login and signup), **do not create a find service**.
+- **If a feature requires query operations**, implement `find-<feature>.service.ts`. It is the ONLY service permitted to have more than one method, and it must contain **ONLY TWO methods**:
+  1. `findAll(...)`
+  2. `findOne(id: string)`
 
 ---
 
-## Rule 3: DTO and Interface Placement
+## Rule 5: DTO and Interface Placement
 
 - If a DTO or interface is used **only** by a single service, declare and export it directly within that service file:
   ```typescript
@@ -72,17 +79,35 @@ export class FindProxyService {
 
 ---
 
-## Rule 4: Controllers Must Be Thin
+## Rule 6: Route Registration & Router Mounting
 
-Controllers in `src/features/<feature>/<feature>.controller.ts` must contain **ZERO business logic**:
+Route registration must follow this exact flow:
 
-- Extract request params, query, or body.
-- Call `service.handle(dto)` or `findService.findAll()` / `findService.findOne()`.
-- Send reply with appropriate HTTP status code (`200`, `201`, `202`, etc.).
+1. `<feature>.routes.ts` defines the endpoints with TypeBox schemas and calls the controller methods.
+2. In `src/routes/router.ts`:
+   - Import the feature routes: `import { <Feature>Routes } from '../features/<feature>/<feature>.routes.js';`
+   - Register it inside the `routes` constant with its prefix:
+     ```typescript
+     const routes: FastifyPluginAsync = async (fastify, _opts) => {
+       fastify.register(AppRoutes, { prefix: 'app' });
+       fastify.register(<Feature>Routes, { prefix: '<feature>' });
+     };
+     ```
+   - `Router.define(instance)` mounts `routes` under `api/v1`:
+     ```typescript
+     export class Router {
+       static async define(instance: FastifyInstance) {
+         const v1 = 'v1';
+         const currentVersion = v1;
+         instance.register(routes, { prefix: `api/${currentVersion}` });
+       }
+     }
+     ```
+3. `Router.define(server)` is called inside `boostrap(server)` in `src/bootstrap/app.ts`.
 
 ---
 
-## Rule 5: Fastify 5 & TypeBox Type Provider
+## Rule 7: Fastify 5 & TypeBox Type Provider
 
 - All routes must define TypeBox schemas for validation.
 - In `src/main.ts`, the server is configured with `.withTypeProvider<TypeBoxTypeProvider>()`.
@@ -91,7 +116,7 @@ Controllers in `src/features/<feature>/<feature>.controller.ts` must contain **Z
 
 ---
 
-## Rule 6: ESM Imports Require `.js` Extension
+## Rule 8: ESM Imports Require `.js` Extension
 
 TypeScript is configured for Node.js ESM (`"type": "module"`). All relative imports must explicitly include the `.js` extension:
 
@@ -103,18 +128,3 @@ import { AppSchema } from './app.schema.js';
 // ❌ FORBIDDEN
 import { Router } from '../routes/router';
 ```
-
----
-
-## Rule 7: Asynchronous Account Hydration via BullMQ
-
-- Any ProxyScrape account created via `POST /api/v1/proxy-accounts` must be saved with initial status `'inactive'`.
-- A background job must be dispatched to BullMQ (`account-hydration`).
-- Only the background worker may update the account status to `'active'` after persisting its proxies.
-
----
-
-## Rule 8: Target-Scoped Ban Filtering
-
-- Bans must be checked against the target domain/URL for each proxy lease.
-- Do not blindly lease a proxy that has an active `ProxyBan` for the requested target connection.

@@ -19,10 +19,10 @@ Every feature directory must follow this exact layout:
 src/features/<feature>/
 ├── <feature>.routes.ts              # FastifyPluginAsync with schema validation
 ├── <feature>.schema.ts              # TypeBox schemas and Static types
-├── <feature>.controller.ts          # Controller delegating to services
+├── <feature>.controller.ts          # EXACTLY ONE controller, extends Controller base class
 └── services/
-    ├── find-<feature>.service.ts    # ONLY findAll and findOne(id)
-    └── <action>-<feature>.service.ts # Single-action class with only handle(dto)
+    ├── find-<feature>.service.ts    # OPTIONAL: ONLY if feature has CRUD/queries (findAll, findOne)
+    └── <action>-<feature>.service.ts # Single-action classes with only handle(dto)
 ```
 
 ---
@@ -36,13 +36,14 @@ src/features/<feature>/
 3. Export an object grouping the schemas (e.g., `export const <Feature>Schema = { ... }`).
 4. Export static types using `export type <Name>Type = Static<typeof ...>`.
 
-### Step 2: Create the Query Service (`services/find-<feature>.service.ts`)
+### Step 2: Determine if Query Service is Needed (`services/find-<feature>.service.ts`)
 
-1. Define class `Find<Feature>Service`.
-2. **STRICT RULE**: Implement **ONLY** these two methods:
-   - `async findAll(filter?: any)`
-   - `async findOne(id: string)`
-3. Export the class and a default instance.
+1. **Is the feature performing read/query operations (listing items or fetching by ID)?**
+   - **YES** ➔ Create `services/find-<feature>.service.ts`.
+     - Implement **ONLY** these two methods:
+       - `async findAll(filter?: any)`
+       - `async findOne(id: string)`
+   - **NO** (e.g. auth login/signup, command-only features) ➔ **DO NOT create a find service**.
 
 ### Step 3: Create Single-Action Services (`services/<action>-<feature>.service.ts`)
 
@@ -55,21 +56,29 @@ For every other operation (e.g., create, update, delete, lease, ban, sync):
 
 ### Step 4: Create the Controller (`<feature>.controller.ts`)
 
-1. Injects `find-<feature>.service.ts` and each single-action service.
-2. Contains methods corresponding to each route endpoint.
-3. **ZERO business logic**: Extract request input, call `service.handle(dto)` or `findService.findAll()`, and send reply.
-4. Export the controller class and a default instance.
+1. **Mandatory Inheritance**: Must extend `Controller` from `../../shared/controllers/controller.js`.
+2. **Exactly One Controller**: Only one controller file per feature.
+3. **Pure Route Mapper**: Contains zero business logic. Each method corresponds 1:1 to an endpoint in `<feature>.routes.ts`.
+4. Extracts request input (`request.body`, `params`, `query`), forwards it directly to the designated service (`service.handle(dto)` or `findService.findAll()`), and sends `reply.status(...).send(...)`.
+5. Export both the class and a default instantiated singleton.
 
 ### Step 5: Create the Routes Plugin (`<feature>.routes.ts`)
 
-1. Export a `FastifyPluginAsync` function.
+1. Export a `FastifyPluginAsync` function named `<Feature>Routes`.
 2. Register endpoints with full TypeBox schemas.
-3. Forward requests to the controller singleton.
+3. Handlers simply delegate directly to the controller: `async (request, reply) => await <feature>Controller.<method>(request, reply)`.
 
-### Step 6: Register in Router (`src/routes/router.ts`)
+### Step 6: Register in Global Router (`src/routes/router.ts`)
 
 1. Import `<Feature>Routes` in `src/routes/router.ts`.
-2. Register the plugin with prefix: `fastify.register(<Feature>Routes, { prefix: "<feature>" });`.
+2. Register the plugin inside the `routes` constant with its prefix:
+   ```typescript
+   const routes: FastifyPluginAsync = async (fastify, _opts) => {
+     fastify.register(AppRoutes, { prefix: 'app' });
+     fastify.register(<Feature>Routes, { prefix: '<feature>' });
+   };
+   ```
+3. The `Router.define()` method registers `routes` with `api/v1`, and is mounted via `boostrap()` in `src/bootstrap/app.ts`.
 
 ---
 

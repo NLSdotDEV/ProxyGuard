@@ -26,6 +26,7 @@ This skill provides an automated audit procedure to verify that all code in Prox
 Check every `.service.ts` file:
 
 1. Is the file named `find-*.service.ts`?
+   - Verify it is only present in CRUD features that actually query items.
    - Verify it contains **ONLY** `findAll(...)` and `findOne(...)`.
    - Flag any other method as an **Architecture Violation**.
 2. Is the file named `<action>-*.service.ts`?
@@ -37,13 +38,16 @@ Check every `.service.ts` file:
 
 ### Step 2: Scan Controllers in `src/features/*/*.controller.ts`
 
-1. Check that methods only extract request data, call `service.handle()` or `findService.findAll()/findOne()`, and call `reply.send()`.
-2. Flag any database queries, Redis calls, or direct business calculations in controllers as **Architecture Violations**.
+1. **Inheritance Check**: Verify that every controller extends `Controller` from `../../shared/controllers/controller.js`.
+2. **Single Controller Check**: Verify that each feature directory contains **EXACTLY ONE** controller file (`<feature>.controller.ts`).
+3. **Route Mapper Check**: Verify that methods map 1:1 to endpoints in `<feature>.routes.ts`. Methods must only extract request data, call `service.handle()` or `findService.findAll()/findOne()`, and call `reply.send()`.
+4. Flag any database queries, Redis calls, or direct business calculations in controllers as **Architecture Violations**.
 
 ### Step 3: Scan Routes and Schemas
 
 1. Verify that every route has a TypeBox schema attached.
 2. Verify that schemas use `Type.Object(...)` from `typebox` and export `Static<typeof ...>` types.
+3. Verify that the route plugin is registered in `src/routes/router.ts` inside `const routes`.
 
 ### Step 4: Scan Imports and Types
 

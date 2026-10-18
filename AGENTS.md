@@ -45,6 +45,8 @@ ProxyGuard/
 │   │   ├── queues/                   # BullMQ queue instances
 │   │   └── workers/                  # BullMQ worker processors
 │   ├── shared/
+│   │   ├── controllers/
+│   │   │   └── controller.ts         # Base abstract Controller class
 │   │   ├── guards/                   # Fastify preHandler hooks (e.g. api-key.guard.ts)
 │   │   └── interfaces/               # ONLY interfaces shared across multiple features
 │   ├── storage/                      # SQLite database files and persistent storage
@@ -54,15 +56,15 @@ ProxyGuard/
 │           ├── <feature>.schema.ts
 │           ├── <feature>.controller.ts
 │           └── services/
-│               ├── find-<feature>.service.ts
-│               └── <action>-<feature>.service.ts
+│               ├── find-<feature>.service.ts    # OPTIONAL: Only if feature has CRUD/query
+│               └── <action>-<feature>.service.ts # Single-action classes
 ```
 
 ---
 
 ## 3. Strict Feature Architecture
 
-Every feature under `src/features/<feature>/` must strictly follow the 4-layer structure:
+Every feature under `src/features/<feature>/` must strictly follow the architectural pattern:
 
 ### 3.1 Schemas (`<feature>.schema.ts`)
 
@@ -74,7 +76,7 @@ Every feature under `src/features/<feature>/` must strictly follow the 4-layer s
 
 - Export a `FastifyPluginAsync` function.
 - Attach TypeBox schemas to every route.
-- Handlers should only call the controller:
+- Handlers in the route file ONLY invoke the controller's mapped method:
   ```typescript
   fastify.post(
     '/lease',
@@ -88,21 +90,52 @@ Every feature under `src/features/<feature>/` must strictly follow the 4-layer s
   );
   ```
 
-### 3.3 Controller (`<feature>.controller.ts`)
+### 3.3 Controller (`<feature>.controller.ts`) — Rules & Responsibilities
 
-- Controllers are thin orchestrators. They handle HTTP request extraction and reply status/sending.
-- Controllers can optionally extend the base `Controller` class (`import { Controller } from '../../shared/controllers/controller.js'`) to inherit shared response/error helpers.
-- **ZERO business logic in controllers**.
-- Injects `find-<feature>.service.ts` and relevant single-action services via constructor.
+- **Mandatory Base Class**: Every controller **MUST extend the abstract `Controller` class** (`import { Controller } from '../../shared/controllers/controller.js'`).
+- **Exactly One Controller per Feature**: A feature must contain **only one** controller file (`<feature>.controller.ts`).
+- **Pure Route Mapper**: The controller is directly a route mapper.
+  - It contains **ZERO business logic**.
+  - Each method in the controller represents a route mapped inside the feature itself.
+  - It grabs data from the request (`request.body`, `request.params`, `request.query`, headers) and passes it down to the appropriate service (`service.handle(dto)` or `findService.findAll()` / `findService.findOne()`).
+  - Sends the response and status code back to the client (`reply.status(...).send(...)`).
+- Injects services via constructor and calls `super()`.
 - Export both the class and a default instantiated singleton.
+
+```typescript
+import { FastifyReply, FastifyRequest } from 'fastify';
+import { Controller } from '../../shared/controllers/controller.js';
+import leaseProxyService, {
+  LeaseProxyService,
+} from './services/lease-proxy.service.js';
+import { LeaseProxySchemaType } from './proxy.schema.js';
+
+export class ProxyController extends Controller {
+  constructor(private readonly leaseProxyService: LeaseProxyService) {
+    super();
+  }
+
+  // Each method directly maps to a route in proxy.routes.ts
+  async lease(request: FastifyRequest, reply: FastifyReply) {
+    const body = request.body as LeaseProxySchemaType;
+    const response = await this.leaseProxyService.handle(body);
+    reply.status(200).send(response);
+  }
+}
+
+export default new ProxyController(leaseProxyService);
+```
 
 ### 3.4 Services (`services/`) — Strict Rules
 
-1. **Query Service (`find-<feature>.service.ts`)**:
-   - Contains **ONLY TWO methods**:
+1. **Query Service (`find-<feature>.service.ts`) is OPTIONAL**:
+   - **Not all features need a find service**. Only features that require querying collections or finding items by ID (CRUD features) should have it.
+   - For example, an `auth` feature with `auth-login.service.ts` and `auth-signup.service.ts` does NOT need a `find-auth.service.ts`.
+   - If present, it contains **ONLY TWO methods**:
      - `findAll(...)`
      - `findOne(id: string)`
    - Do NOT add any other methods to `find-*.service.ts`.
+
 2. **Single-Action Services (`<action>-<feature>.service.ts`)**:
    - All other services in `services/` must be **Single-Action Classes**.
    - Must contain **EXACTLY ONE method**: `handle(dto: ActionDto): Promise<Result>`.
@@ -125,14 +158,49 @@ Every feature under `src/features/<feature>/` must strictly follow the 4-layer s
 
 ---
 
-## 4. Data, Cache & Job Workflows
+## 4. Route Registration Architecture
 
-### 4.1 Application & Key Generation
+Route registration follows a strict hierarchy:
+
+1. **Inside Feature**: Feature endpoints are mapped in `src/features/<feature>/<feature>.routes.ts` calling the feature controller's methods.
+2. **Feature Export**: `<feature>.routes.ts` exports `<Feature>Routes: FastifyPluginAsync`.
+3. **Global Router (`src/routes/router.ts`)**:
+   - All feature route plugins are imported and registered inside the `routes` constant with their feature prefix.
+   - The `Router` class registers the `routes` plugin with the version prefix (e.g. `api/v1`):
+
+   ```typescript
+   import { FastifyInstance, FastifyPluginAsync } from 'fastify';
+   import { AppRoutes } from '../features/app/app.routes.js';
+   import { ProxyRoutes } from '../features/proxy/proxy.routes.js';
+
+   // define routes
+   const routes: FastifyPluginAsync = async (fastify, _opts) => {
+     fastify.register(AppRoutes, { prefix: 'app' });
+     fastify.register(ProxyRoutes, { prefix: 'proxy' });
+   };
+
+   export class Router {
+     static async define(instance: FastifyInstance) {
+       const v1 = 'v1';
+       const currentVersion = v1;
+       instance.register(routes, { prefix: `api/${currentVersion}` });
+     }
+   }
+   ```
+
+4. **Bootstrap (`src/bootstrap/app.ts`)**:
+   - `Router.define(server)` is invoked inside the `boostrap` function, ensuring all routes are mounted on server startup.
+
+---
+
+## 5. Data, Cache & Job Workflows
+
+### 5.1 Application & Key Generation
 
 - Applications register to receive an `id` and `token`.
 - Protected routes validate this token via Fastify guard (`x-app-token` or `Authorization: Bearer <token>`).
 
-### 4.2 Account Creation & Async Hydration (BullMQ)
+### 5.2 Account Creation & Async Hydration (BullMQ)
 
 - When a user submits a ProxyScrape key via `POST /api/v1/proxy-accounts`:
   1. Create the `ProxyAccount` entity in SQLite with `status: 'inactive'`.
@@ -140,7 +208,7 @@ Every feature under `src/features/<feature>/` must strictly follow the 4-layer s
   3. Return `202 Accepted` immediately with the account ID and `status: 'inactive'`.
   4. The BullMQ worker connects to ProxyScrape, fetches credentials and proxy list, persists `Proxy` entities, and flips the account status to `'active'`.
 
-### 4.3 Proxy Leasing & Target-Scoped Ban Filtering
+### 5.3 Proxy Leasing & Target-Scoped Ban Filtering
 
 - When leasing a proxy for a `targetUrl`:
   1. Check Redis for an existing sticky session for `targetUrl` (domain-keyed).
@@ -148,7 +216,7 @@ Every feature under `src/features/<feature>/` must strictly follow the 4-layer s
   3. Cache the assigned proxy in Redis with TTL (`cacheTime`, default: 60s).
   4. Return formatted proxy credentials.
 
-### 4.4 Ban Reporting
+### 5.4 Ban Reporting
 
 - When a ban is reported (`POST /api/v1/proxies/ban`):
   1. Save a `ProxyBan` record in SQLite linking the proxy and `targetUrl`.
@@ -156,9 +224,10 @@ Every feature under `src/features/<feature>/` must strictly follow the 4-layer s
 
 ---
 
-## 5. Coding Rules & Constraints
+## 6. Coding Rules & Constraints
 
+- **Controller Base Class**: Every controller MUST extend `Controller` from `src/shared/controllers/controller.js`.
+- **One Controller per Feature**: Never create multiple controllers within a feature.
 - **ESM Imports**: All relative TypeScript imports must include the `.js` extension (e.g., `import { Router } from '../routes/router.js';`).
 - **Linter & Formatter**: Run `npm run lint` and `npm run format` after modifications.
 - **Type Safety**: Avoid using `any`. Use TypeBox `Static<typeof ...>` and strongly-typed Fastify request/reply objects.
-- **Router Mounting**: All feature routes are registered in `src/routes/router.ts` with prefix `api/v1/<feature>`.
