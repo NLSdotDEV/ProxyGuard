@@ -1,8 +1,11 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
+import { AppRoutes } from "../features/app/app.routes.js";
 
 
 // define routes
-const routes: FastifyPluginAsync = async (fastify, opts) => { };
+const routes: FastifyPluginAsync = async (fastify, opts) => {
+    fastify.register(AppRoutes, { prefix: "app" })
+};
 
 
 export class Router {
