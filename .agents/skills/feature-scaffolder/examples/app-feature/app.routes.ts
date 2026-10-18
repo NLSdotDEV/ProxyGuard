@@ -8,8 +8,16 @@ export const AppRoutes: FastifyPluginAsync = async (fastify, _opts) => {
     {
       schema: {
         body: AppSchema.getHello,
+        response: {
+          200: AppSchema.getHelloResponse,
+        },
       },
     },
     async (request, reply) => await appController.getHello(request, reply),
+  );
+
+  fastify.get(
+    '/',
+    async (request, reply) => await appController.getAll(request, reply),
   );
 };
