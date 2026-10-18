@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 dist/
+build/
 
 # Environment
 .env
@@ -17,3 +18,7 @@ coverage/
 
 # OS
 .DS_Store
+
+# Database
+*.db
+*.sqlite
