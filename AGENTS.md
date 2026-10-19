@@ -17,6 +17,16 @@ ProxyGuard is a self-hosted, high-performance proxy management REST API designed
 - **Internal Core Framework**: **Aegis** (`#aegis/*`) — in-house framework packages developed by ProxyGuard developers providing base primitives, foundation classes, controllers, and queue systems (analogous to Laravel's `Illuminate`)
 - **Security / Admin**: `argon2` (reserved for upcoming self-hosted admin management)
 
+### 1.1 Architectural Philosophy: Why "Aegis"? (Greek Mythology)
+
+In ancient Greek mythology, the **Aegis** (Ancient Greek: αἰγίς, _aigís_) is the legendary shield or protective garment borne by **Zeus** and famously wielded by **Athena**, the goddess of wisdom, battle strategy, and intellect. Known as an impenetrable divine defense, the Aegis shielded its bearers from every attack, protected heroes during perilous trials, and commanded absolute authority on the battlefield.
+
+For **ProxyGuard**, an infrastructure designed to shield scrapers, mitigate bans, and defend against proxy pool degradation, naming our internal core framework **Aegis** (`#aegis/*`) reflects our central engineering ethos:
+
+- **Impenetrable Defense**: Just as the mythical Aegis deflected mortal and divine assaults, the Aegis framework insulates ProxyGuard's core application logic from upstream proxy degradation, target bans, and pool exhaustion.
+- **Strategic Wisdom & Discipline**: Wielded in the spirit of Athena, Aegis enforces structured architectural patterns (`Controller`, `Queue`, `Worker`, `Producer`), ensuring zero business logic in controllers, single-action clarity in services, and disciplined background job lifecycles.
+- **Resilience Under Siege**: When scrapers face aggressive anti-bot countermeasures (HTTP 403, 429, CAPTCHAs), Aegis primitives power immediate ban shifting, sticky session preservation, and self-healing pool management.
+
 ---
 
 ## 2. Directory Structure Conventions

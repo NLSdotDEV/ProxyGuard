@@ -141,3 +141,7 @@ import { Router } from '../routes/router';
   import { Queue } from '#aegis/queues/queue.js';
   ```
 - The `src/shared/` directory is reserved ONLY for cross-feature guards (`src/shared/guards/`) and shared interfaces (`src/shared/interfaces/`). The base controller and framework primitives live under `src/core/packages/` as part of `aegis`.
+
+> [!NOTE]
+> **Why "Aegis"? (Greek Mythology Context)**
+> In Greek mythology, the **Aegis** (αἰγίς) is the impenetrable shield or garment borne by Zeus and wielded by Athena, goddess of wisdom, intellect, and battle strategy. It provided total protection against harm and struck intimidation into threats. We chose **Aegis** because it serves as the ultimate defensive shield for ProxyGuard: deflecting anti-bot bans, insulating core logic from proxy volatility, and enforcing disciplined, single-action architectural wisdom.

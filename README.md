@@ -302,6 +302,24 @@ run().catch(console.error);
 
 ---
 
+## The Aegis Core Framework & Greek Mythology
+
+ProxyGuard's internal engine foundation is built upon our in-house framework called **Aegis** (`#aegis/*`).
+
+### The Mythological Origin
+
+In ancient Greek mythology, the **Aegis** (Ancient Greek: αἰγίς, _aigís_) is the legendary shield or protective cloak carried by **Zeus** and famously wielded by **Athena**, the goddess of wisdom, warfare strategy, and intellect. The Aegis was revered as an impenetrable instrument of defense—capable of deflecting any assault, protecting heroes from danger, and commanding absolute authority on the battlefield.
+
+### Why Aegis for ProxyGuard?
+
+We chose the name **Aegis** for ProxyGuard's core framework because it embodies our central architectural mission:
+
+- **🛡️ A Shield for Scraping Pipelines:** Just as the mythical Aegis deflected strikes in battle, our framework shields scraping pipelines from IP bans, rate limits, pool exhaustion, and upstream proxy instability.
+- **🏛️ Architectural Discipline & Wisdom:** Guided by Athena's strategic mindset, Aegis enforces strict single-action service boundaries, robust BullMQ queue/worker lifecycles, and isolated route-mapping controllers.
+- **⚡ Resilience & Self-Healing:** The Aegis framework powers automated ban mitigation, real-time eviction of compromised IPs, and seamless session fallback so that scrapers continue running without disruption.
+
+---
+
 ## Security & Guards
 
 Because ProxyGuard is an open-source, self-hosted utility designed for direct integration with scraping pipelines:
