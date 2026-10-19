@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Controller } from '../../../../../src/shared/controllers/controller.js';
+import { Controller } from '#aegis/controller/controller.js';
 import getHelloService, {
   GetHelloService,
 } from './services/get-hello.service.js';

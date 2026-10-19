@@ -19,13 +19,13 @@ Use this checklist to perform code reviews and audits on any file or pull reques
 
 ## 2. Controllers Audit
 
-| Check                    | Requirement                                                                                              | Severity    | Action if Violated                                                                    |
-| :----------------------- | :------------------------------------------------------------------------------------------------------- | :---------- | :------------------------------------------------------------------------------------ |
-| **Mandatory Base Class** | Controller extends `Controller` (`import { Controller } from '../../shared/controllers/controller.js'`). | 🔴 Critical | Make the controller class extend `Controller` and invoke `super()`.                   |
-| **Single Controller**    | A feature contains **EXACTLY ONE** controller (`<feature>.controller.ts`).                               | 🔴 Critical | Consolidate multiple controllers into the single feature controller.                  |
-| **Direct Route Mapper**  | Controller methods map 1:1 to routes, extracting data and passing directly to services.                  | 🔴 Critical | Remove any inline calculations, DB calls, or Redis access; move logic into a service. |
-| **Typed Requests**       | Uses `request.body as SomeType` or Fastify typed route generics.                                         | 🟡 Warning  | Cast or type request body/params using TypeBox `Static` types.                        |
-| **Proper HTTP Status**   | Returns appropriate status codes: `201` for created, `202` for queued jobs, `200` for OK.                | 🟢 Notice   | Align status codes with REST conventions.                                             |
+| Check                    | Requirement                                                                                       | Severity    | Action if Violated                                                                    |
+| :----------------------- | :------------------------------------------------------------------------------------------------ | :---------- | :------------------------------------------------------------------------------------ |
+| **Mandatory Base Class** | Controller extends `Controller` (`import { Controller } from '#aegis/controller/controller.js'`). | 🔴 Critical | Make the controller class extend `Controller` and invoke `super()`.                   |
+| **Single Controller**    | A feature contains **EXACTLY ONE** controller (`<feature>.controller.ts`).                        | 🔴 Critical | Consolidate multiple controllers into the single feature controller.                  |
+| **Direct Route Mapper**  | Controller methods map 1:1 to routes, extracting data and passing directly to services.           | 🔴 Critical | Remove any inline calculations, DB calls, or Redis access; move logic into a service. |
+| **Typed Requests**       | Uses `request.body as SomeType` or Fastify typed route generics.                                  | 🟡 Warning  | Cast or type request body/params using TypeBox `Static` types.                        |
+| **Proper HTTP Status**   | Returns appropriate status codes: `201` for created, `202` for queued jobs, `200` for OK.         | 🟢 Notice   | Align status codes with REST conventions.                                             |
 
 ---
 
@@ -41,9 +41,10 @@ Use this checklist to perform code reviews and audits on any file or pull reques
 
 ## 4. Code Hygiene Audit
 
-| Check                    | Requirement                          | Command to Verify |
-| :----------------------- | :----------------------------------- | :---------------- |
-| **ESM `.js` Extensions** | All relative imports end with `.js`. | `npm run build`   |
-| **TypeScript Typing**    | Zero type errors.                    | `npm run build`   |
-| **Linter Checks**        | Passes ESLint flat config.           | `npm run lint`    |
-| **Prettier Formatting**  | Adheres to `.prettierrc`.            | `npm run format`  |
+| Check                    | Requirement                                                                                                                          | Command to Verify |
+| :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------- | :---------------- |
+| **Aegis Exclusivity**    | All internal framework foundations imported from `#aegis/*`. `aegis` is the ONLY internal package name developed by ProxyGuard devs. | `npm run build`   |
+| **ESM `.js` Extensions** | All relative imports end with `.js`.                                                                                                 | `npm run build`   |
+| **TypeScript Typing**    | Zero type errors.                                                                                                                    | `npm run build`   |
+| **Linter Checks**        | Passes ESLint flat config.                                                                                                           | `npm run lint`    |
+| **Prettier Formatting**  | Adheres to `.prettierrc`.                                                                                                            | `npm run format`  |

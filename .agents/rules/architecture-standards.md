@@ -8,7 +8,7 @@ These rules are strictly enforced across the entire ProxyGuard codebase. Coding 
 
 - **Every feature controller MUST extend the abstract `Controller` class**:
   ```typescript
-  import { Controller } from '../../shared/controllers/controller.js';
+  import { Controller } from '#aegis/controller/controller.js';
 
   export class FeatureController extends Controller {
     constructor(...) {
@@ -128,3 +128,16 @@ import { AppSchema } from './app.schema.js';
 // ❌ FORBIDDEN
 import { Router } from '../routes/router';
 ```
+
+---
+
+## Rule 9: Internal Framework Packages — In-House Aegis Ecosystem (`#aegis/*`)
+
+- **In-House Developed**: All core packages under `src/core/packages/` are proprietary framework packages **developed exclusively by ProxyGuard developers**.
+- **Sole Package Name (`aegis`)**: The package ecosystem is strictly named **`aegis`** (and ONLY `aegis`, serving the same role as `Illuminate` does in Laravel). Never create or use any other package names or aliases for internal framework code.
+- All framework foundations, base classes (including `Controller`, `Queue`, `Worker`, `Producer`), and engine primitives belong to `aegis` and are imported via Node native subpath imports (`#aegis/*`):
+  ```typescript
+  import { Controller } from '#aegis/controller/controller.js';
+  import { Queue } from '#aegis/queues/queue.js';
+  ```
+- The `src/shared/` directory is reserved ONLY for cross-feature guards (`src/shared/guards/`) and shared interfaces (`src/shared/interfaces/`). The base controller and framework primitives live under `src/core/packages/` as part of `aegis`.

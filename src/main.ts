@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import fastify from 'fastify';
 import { boostrap } from './bootstrap/app.js';
