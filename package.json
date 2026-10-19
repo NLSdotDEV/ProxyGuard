@@ -4,6 +4,14 @@
   "private": true,
   "type": "module",
   "imports": {
+    "#aegis/controller": {
+      "types": "./src/core/packages/controller/index.ts",
+      "default": "./build/core/packages/controller/index.js"
+    },
+    "#aegis/queues": {
+      "types": "./src/core/packages/queues/index.ts",
+      "default": "./build/core/packages/queues/index.js"
+    },
     "#aegis/*": {
       "types": "./src/core/packages/*",
       "default": "./build/core/packages/*"
@@ -33,7 +41,9 @@
     "@fastify/env": "^7.0.1",
     "@fastify/multipart": "^10.1.4",
     "@fastify/type-provider-typebox": "^6.3.0",
+    "@mikro-orm/cli": "^7.2.5",
     "@mikro-orm/core": "^7.2.5",
+    "@mikro-orm/decorators": "^7.2.5",
     "@mikro-orm/entity-generator": "^7.2.5",
     "@mikro-orm/migrations": "^7.2.5",
     "@mikro-orm/mongodb": "^7.2.5",
