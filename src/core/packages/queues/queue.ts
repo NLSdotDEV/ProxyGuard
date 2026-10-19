@@ -1,5 +1,5 @@
-import { Processor } from 'bullmq';
 
-export abstract class Queue {
+
+export abstract class AegisQueue {
   protected queue: string = 'default';
 }

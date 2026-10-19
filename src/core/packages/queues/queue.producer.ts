@@ -1,3 +1,3 @@
-import { Queue } from './queue.js';
+import { AegisQueue } from './queue.js';
 
-export abstract class Producer extends Queue {}
+export abstract class Producer extends AegisQueue {}
