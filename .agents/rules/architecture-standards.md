@@ -142,6 +142,27 @@ import { Router } from '../routes/router';
   ```
 - The `src/shared/` directory is reserved ONLY for cross-feature guards (`src/shared/guards/`) and shared interfaces (`src/shared/interfaces/`). The base controller and framework primitives live under `src/core/packages/` as part of `aegis`.
 
+---
+
+## Rule 10: Background Jobs & Queue Architecture (Producers & Workers)
+
+All asynchronous background tasks, queues, and workers reside in `src/jobs/` and must adhere strictly to these architectural standards:
+
+1. **Mandatory Aegis Base Classes**:
+   - Every queue producer MUST extend `Producer<DataType, ResultType>` from `#aegis/queues/queue.producer.js`.
+   - Every queue worker MUST extend `Worker<DataType, ResultType>` from `#aegis/queues/queue.worker.js`.
+2. **Directory Structure**:
+   - `src/jobs/interfaces/<job>.interface.ts`: Strongly-typed payload interface shared between producer and worker.
+   - `src/jobs/queues/<job>.producer.ts`: Producer class setting `protected override queueName` and implementing `dispatch(...)`.
+   - `src/jobs/workers/<job>.worker.ts`: Worker class setting matching `protected override queueName`, optional `concurrency`, and implementing `execute(job)`, `failed(job, error)`, and `success(job, result)`.
+   - `src/jobs/index.ts`: Central registry collecting all active workers and producers.
+3. **Graceful Shutdown**:
+   - `src/jobs/index.ts` must export `closeAllJobs(): Promise<void>` closing workers first, then producers.
+   - Must be mounted inside `boostrap(server)` in `src/bootstrap/app.ts` under `server.addHook('onClose', ...)`.
+4. **Single-Action Service Dispatch**:
+   - Single-action services dispatch jobs by invoking the singleton producer's `dispatch()` method.
+   - Controller returns `202 Accepted` immediately upon job dispatch.
+
 > [!NOTE]
 > **Why "Aegis"? (Greek Mythology Context)**
 > In Greek mythology, the **Aegis** (αἰγίς) is the impenetrable shield or garment borne by Zeus and wielded by Athena, goddess of wisdom, intellect, and battle strategy. It provided total protection against harm and struck intimidation into threats. We chose **Aegis** because it serves as the ultimate defensive shield for ProxyGuard: deflecting anti-bot bans, insulating core logic from proxy volatility, and enforcing disciplined, single-action architectural wisdom.

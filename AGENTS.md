@@ -39,6 +39,7 @@ ProxyGuard/
 │   └── skills/
 │       ├── feature-scaffolder/
 │       ├── service-creator/
+│       ├── queue-scaffolder/
 │       └── architecture-auditor/
 ├── src/
 │   ├── main.ts                       # Fastify initialization & server start
@@ -64,8 +65,10 @@ ProxyGuard/
 │   ├── cache/
 │   │   └── redis.ts                  # ioredis client singleton & sticky cache helpers
 │   ├── jobs/
-│   │   ├── queues/                   # BullMQ queue instances
-│   │   └── workers/                  # BullMQ worker processors
+│   │   ├── index.ts                  # Central jobs registry & graceful shutdown
+│   │   ├── interfaces/               # Job payload interfaces (*.interface.ts)
+│   │   ├── queues/                   # BullMQ Producer classes (*.producer.ts)
+│   │   └── workers/                  # BullMQ Worker classes (*.worker.ts)
 │   ├── shared/
 │   │   ├── guards/                   # Fastify preHandler hooks (e.g. api-key.guard.ts)
 │   │   └── interfaces/               # ONLY interfaces shared across multiple features
@@ -176,6 +179,33 @@ export default new ProxyController(leaseProxyService);
   ```
 - **Shared Interfaces**: If an interface is reused across multiple features or services, place it in `src/shared/interfaces/` (e.g., `src/shared/interfaces/pagination.interface.ts`).
 
+### 3.6 Background Job Architecture (Producers & Workers)
+
+All asynchronous background tasks, queues, and workers are organized under `src/jobs/` and must strictly adhere to the following standards:
+
+1. **Mandatory Base Classes**:
+   - Every queue producer must extend `Producer<DataType, ResultType>` (`import { Producer } from '#aegis/queues/queue.producer.js'`).
+   - Every queue worker must extend `Worker<DataType, ResultType>` (`import { Worker } from '#aegis/queues/queue.worker.js'`).
+2. **Producer Requirements (`src/jobs/queues/<job>.producer.ts`)**:
+   - Must specify `protected override queueName = '<job-name>'`.
+   - Must implement `dispatch(data: DataType, opts?: JobsOptions): Promise<Job<DataType, ResultType>>` using `this.queue.add(...)`.
+   - Must export both the class and a default/instantiated singleton instance.
+3. **Worker Requirements (`src/jobs/workers/<job>.worker.ts`)**:
+   - Must specify matching `protected override queueName = '<job-name>'`.
+   - Can optionally override `protected override concurrency = <number>` (default: 5).
+   - Must implement:
+     - `execute(job: Job<DataType, ResultType>, token?: string): Promise<ResultType>` (the core processing logic).
+     - `failed(job: Job<DataType, ResultType> | undefined, error: Error, prev?: string): Promise<void> | void` (failure handling and logging).
+     - `success(job: Job<DataType, ResultType>, result: ResultType, prev?: string): Promise<void> | void` (success notifications/logging).
+   - Workers automatically boot and connect on instantiation via the base class.
+   - Must export both the class and an instantiated singleton.
+4. **Job Interfaces (`src/jobs/interfaces/<job>.interface.ts`)**:
+   - All job payload interfaces must be strongly typed and stored in `src/jobs/interfaces/` so both producers and consumers share the same contract.
+5. **Central Registry & Graceful Shutdown (`src/jobs/index.ts`)**:
+   - All active workers and producers must be registered in arrays (`workers`, `producers`) in `src/jobs/index.ts`.
+   - Must export a `closeAllJobs()` function that closes workers first, then producers, to avoid dropping active jobs.
+   - Hooked to Fastify's `onClose` hook in `src/bootstrap/app.ts`.
+
 ---
 
 ## 4. Route Registration Architecture
@@ -248,6 +278,7 @@ Route registration follows a strict hierarchy:
 
 - **Core Framework Packages (`#aegis/*`)**: All reusable framework foundation packages, base classes (including `Controller`, `Queue`, `Worker`, `Producer`), and future engine primitives are packages **developed in-house by ProxyGuard developers**. The package ecosystem is strictly named **`aegis`** (and ONLY `aegis`, similar to Laravel's `Illuminate`). They reside under `src/core/packages/` and are imported exclusively via `#aegis/*`. No other internal package names or aliases may be created.
 - **Controller Base Class**: Every controller MUST extend `Controller` from `#aegis/controller/controller.js`.
+- **Producer & Worker Base Classes**: Every queue producer MUST extend `Producer` from `#aegis/queues/queue.producer.js`, and every queue worker MUST extend `Worker` from `#aegis/queues/queue.worker.js`.
 - **One Controller per Feature**: Never create multiple controllers within a feature.
 - **ESM Imports**: All relative TypeScript imports must include the `.js` extension (e.g., `import { Router } from '../routes/router.js';`).
 - **Linter & Formatter**: Run `npm run lint` and `npm run format` after modifications.
