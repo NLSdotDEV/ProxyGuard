@@ -6,6 +6,10 @@
     "declaration": true,
     "outDir": "build",
     "rootDir": "src",
+    "paths": {
+      "@aegis/*": ["./src/core/packages/*"],
+      "#aegis/*": ["./src/core/packages/*"]
+    },
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

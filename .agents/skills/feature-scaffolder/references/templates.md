@@ -108,7 +108,7 @@ export default new CreateItemService({} as EntityManager);
 
 ```typescript
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Controller } from '../../../shared/controllers/controller.js';
+import { Controller } from '#aegis/controller/controller.js';
 import findItemService, {
   FindItemService,
 } from './services/find-item.service.js';

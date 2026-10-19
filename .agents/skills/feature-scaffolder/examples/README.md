@@ -20,7 +20,7 @@ This directory contains a complete, working reference snapshot of a ProxyGuard f
    - Omitted for non-CRUD features (e.g. auth login/signup).
 
 4. **`app-feature/app.controller.ts`**:
-   - **Mandatory Base Class**: Extends `Controller` from `src/shared/controllers/controller.js`.
+   - **Mandatory Base Class**: Extends `Controller` from `#aegis/controller/controller.js`.
    - **Single Controller**: Exactly one controller per feature module.
    - **Direct Route Mapper**: 1:1 mapping between methods and routes in `app.routes.ts`. Zero business logic. Grabs input, forwards to service, and returns `reply.status(code).send(result)`.
 

@@ -56,7 +56,7 @@ For every other operation (e.g., create, update, delete, lease, ban, sync):
 
 ### Step 4: Create the Controller (`<feature>.controller.ts`)
 
-1. **Mandatory Inheritance**: Must extend `Controller` from `../../shared/controllers/controller.js`.
+1. **Mandatory Inheritance**: Must extend `Controller` from `#aegis/controller/controller.js` (from `aegis`, the in-house core framework package ecosystem developed by ProxyGuard devs).
 2. **Exactly One Controller**: Only one controller file per feature.
 3. **Pure Route Mapper**: Contains zero business logic. Each method corresponds 1:1 to an endpoint in `<feature>.routes.ts`.
 4. Extracts request input (`request.body`, `params`, `query`), forwards it directly to the designated service (`service.handle(dto)` or `findService.findAll()`), and sends `reply.status(...).send(...)`.

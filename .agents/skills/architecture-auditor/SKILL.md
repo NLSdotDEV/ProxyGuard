@@ -38,7 +38,7 @@ Check every `.service.ts` file:
 
 ### Step 2: Scan Controllers in `src/features/*/*.controller.ts`
 
-1. **Inheritance Check**: Verify that every controller extends `Controller` from `../../shared/controllers/controller.js`.
+1. **Inheritance Check**: Verify that every controller extends `Controller` from `#aegis/controller/controller.js`.
 2. **Single Controller Check**: Verify that each feature directory contains **EXACTLY ONE** controller file (`<feature>.controller.ts`).
 3. **Route Mapper Check**: Verify that methods map 1:1 to endpoints in `<feature>.routes.ts`. Methods must only extract request data, call `service.handle()` or `findService.findAll()/findOne()`, and call `reply.send()`.
 4. Flag any database queries, Redis calls, or direct business calculations in controllers as **Architecture Violations**.
@@ -52,8 +52,9 @@ Check every `.service.ts` file:
 ### Step 4: Scan Imports and Types
 
 1. Verify that all relative imports end with `.js` (e.g. `import ... from './service.js'`).
-2. Run TypeScript build: `npm run build`.
-3. Run linter: `npm run lint`.
+2. **Internal Framework Package Check**: Verify that all internal framework components and base classes are imported strictly via `#aegis/*` (e.g. `#aegis/controller/controller.js`). `aegis` is the ONLY internal package ecosystem developed by ProxyGuard developers. Flag any `@core`, `@guard`, or arbitrary alias as an **Architecture Violation**.
+3. Run TypeScript build: `npm run build`.
+4. Run linter: `npm run lint`.
 
 ---
 

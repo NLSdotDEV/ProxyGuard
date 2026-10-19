@@ -43,7 +43,7 @@ Are you adding a service in src/features/<feature>/services/?
 4. **DTO Placement**:
    - Single-use DTO/interface: Declare and export in the service file.
    - Cross-feature shared interface: Import from `src/shared/interfaces/`.
-5. **Constructor Injection**: Inject dependencies (MikroORM `EntityManager`, Redis `Redis`, BullMQ `Queue`) through the constructor.
+5. **Constructor Injection**: Inject dependencies (MikroORM `EntityManager`, Redis `Redis`, BullMQ `Queue`, or internal `#aegis/*` framework abstractions) through the constructor. All internal framework classes belong exclusively to the in-house `aegis` ecosystem.
 
 ---
 

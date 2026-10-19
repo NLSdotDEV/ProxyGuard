@@ -14,7 +14,18 @@ ProxyGuard is a self-hosted, high-performance proxy management REST API designed
 - **Database & ORM**: SQLite (`src/storage/database.sqlite`) managed via **MikroORM**
 - **Cache & Sticky Sessions**: Redis via `ioredis`
 - **Background Jobs**: BullMQ (`bullmq`) for async proxy hydration and health checks
+- **Internal Core Framework**: **Aegis** (`#aegis/*`) — in-house framework packages developed by ProxyGuard developers providing base primitives, foundation classes, controllers, and queue systems (analogous to Laravel's `Illuminate`)
 - **Security / Admin**: `argon2` (reserved for upcoming self-hosted admin management)
+
+### 1.1 Architectural Philosophy: Why "Aegis"? (Greek Mythology)
+
+In ancient Greek mythology, the **Aegis** (Ancient Greek: αἰγίς, _aigís_) is the legendary shield or protective garment borne by **Zeus** and famously wielded by **Athena**, the goddess of wisdom, battle strategy, and intellect. Known as an impenetrable divine defense, the Aegis shielded its bearers from every attack, protected heroes during perilous trials, and commanded absolute authority on the battlefield.
+
+For **ProxyGuard**, an infrastructure designed to shield scrapers, mitigate bans, and defend against proxy pool degradation, naming our internal core framework **Aegis** (`#aegis/*`) reflects our central engineering ethos:
+
+- **Impenetrable Defense**: Just as the mythical Aegis deflected mortal and divine assaults, the Aegis framework insulates ProxyGuard's core application logic from upstream proxy degradation, target bans, and pool exhaustion.
+- **Strategic Wisdom & Discipline**: Wielded in the spirit of Athena, Aegis enforces structured architectural patterns (`Controller`, `Queue`, `Worker`, `Producer`), ensuring zero business logic in controllers, single-action clarity in services, and disciplined background job lifecycles.
+- **Resilience Under Siege**: When scrapers face aggressive anti-bot countermeasures (HTTP 403, 429, CAPTCHAs), Aegis primitives power immediate ban shifting, sticky session preservation, and self-healing pool management.
 
 ---
 
@@ -31,22 +42,31 @@ ProxyGuard/
 │       └── architecture-auditor/
 ├── src/
 │   ├── main.ts                       # Fastify initialization & server start
+│   ├── configs/                      # Application, database, and system configurations
+│   ├── core/packages/                # Internal aegis framework packages developed by ProxyGuard devs (#aegis/*)
+│   │   ├── controller/
+│   │   │   ├── controller.ts         # Base abstract Controller class
+│   │   │   └── index.ts
+│   │   └── queues/
+│   │       ├── queue.ts              # Base abstract Queue class
+│   │       ├── queue.worker.ts       # Base abstract Worker class
+│   │       ├── queue.producer.ts     # Base abstract Producer class
+│   │       └── index.ts
 │   ├── bootstrap/
-│   │   ├── app.ts                    # Bootstrap plugins, database, redis, router
-│   │   └── database.ts               # MikroORM init & schema sync
+│   │   └── app.ts                    # Bootstrap application & mount global router
 │   ├── routes/
 │   │   └── router.ts                 # Central /api/v1 router mounting feature plugins
 │   ├── database/
 │   │   ├── db.ts                     # MikroORM EntityManager export & helpers
-│   │   └── entities/                 # MikroORM entities (*.entity.ts)
+│   │   ├── entities/                 # MikroORM entities (*.entity.ts)
+│   │   ├── migrations/               # MikroORM schema migration files
+│   │   └── seeders/                  # MikroORM database seeders
 │   ├── cache/
 │   │   └── redis.ts                  # ioredis client singleton & sticky cache helpers
 │   ├── jobs/
 │   │   ├── queues/                   # BullMQ queue instances
 │   │   └── workers/                  # BullMQ worker processors
 │   ├── shared/
-│   │   ├── controllers/
-│   │   │   └── controller.ts         # Base abstract Controller class
 │   │   ├── guards/                   # Fastify preHandler hooks (e.g. api-key.guard.ts)
 │   │   └── interfaces/               # ONLY interfaces shared across multiple features
 │   ├── storage/                      # SQLite database files and persistent storage
@@ -92,7 +112,7 @@ Every feature under `src/features/<feature>/` must strictly follow the architect
 
 ### 3.3 Controller (`<feature>.controller.ts`) — Rules & Responsibilities
 
-- **Mandatory Base Class**: Every controller **MUST extend the abstract `Controller` class** (`import { Controller } from '../../shared/controllers/controller.js'`).
+- **Mandatory Base Class**: Every controller **MUST extend the abstract `Controller` class** (`import { Controller } from '#aegis/controller/controller.js'`).
 - **Exactly One Controller per Feature**: A feature must contain **only one** controller file (`<feature>.controller.ts`).
 - **Pure Route Mapper**: The controller is directly a route mapper.
   - It contains **ZERO business logic**.
@@ -104,7 +124,7 @@ Every feature under `src/features/<feature>/` must strictly follow the architect
 
 ```typescript
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Controller } from '../../shared/controllers/controller.js';
+import { Controller } from '#aegis/controller/controller.js';
 import leaseProxyService, {
   LeaseProxyService,
 } from './services/lease-proxy.service.js';
@@ -226,7 +246,8 @@ Route registration follows a strict hierarchy:
 
 ## 6. Coding Rules & Constraints
 
-- **Controller Base Class**: Every controller MUST extend `Controller` from `src/shared/controllers/controller.js`.
+- **Core Framework Packages (`#aegis/*`)**: All reusable framework foundation packages, base classes (including `Controller`, `Queue`, `Worker`, `Producer`), and future engine primitives are packages **developed in-house by ProxyGuard developers**. The package ecosystem is strictly named **`aegis`** (and ONLY `aegis`, similar to Laravel's `Illuminate`). They reside under `src/core/packages/` and are imported exclusively via `#aegis/*`. No other internal package names or aliases may be created.
+- **Controller Base Class**: Every controller MUST extend `Controller` from `#aegis/controller/controller.js`.
 - **One Controller per Feature**: Never create multiple controllers within a feature.
 - **ESM Imports**: All relative TypeScript imports must include the `.js` extension (e.g., `import { Router } from '../routes/router.js';`).
 - **Linter & Formatter**: Run `npm run lint` and `npm run format` after modifications.
