@@ -7,7 +7,7 @@
     "outDir": "build",
     "rootDir": "src",
     "paths": {
-      "#aegis/controller": ["./src/core/packages/http/index.ts"],
+      "#aegis/http": ["./src/core/packages/http/index.ts"],
       "#aegis/queues": ["./src/core/packages/queues/index.ts"],
       "#aegis/*": ["./src/core/packages/*"]
     },

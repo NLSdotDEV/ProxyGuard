@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "imports": {
-    "#aegis/controller": {
+    "#aegis/http": {
       "types": "./src/core/packages/http/index.ts",
       "default": "./build/core/packages/http/index.js"
     },
