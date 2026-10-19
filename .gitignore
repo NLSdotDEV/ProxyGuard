@@ -22,3 +22,7 @@ coverage/
 # Database
 *.db
 *.sqlite
+
+# temp
+.temp
+temp
