@@ -48,3 +48,16 @@ Use this checklist to perform code reviews and audits on any file or pull reques
 | **TypeScript Typing**    | Zero type errors.                                                                                                                    | `npm run build`   |
 | **Linter Checks**        | Passes ESLint flat config.                                                                                                           | `npm run lint`    |
 | **Prettier Formatting**  | Adheres to `.prettierrc`.                                                                                                            | `npm run format`  |
+
+---
+
+## 5. Queues, Workers & Producers Audit
+
+| Check                         | Requirement                                                                                                    | Severity    | Action if Violated                                                                |
+| :---------------------------- | :------------------------------------------------------------------------------------------------------------- | :---------- | :-------------------------------------------------------------------------------- |
+| **Producer Inheritance**      | Extends `Producer` (`import { Producer } from '#aegis/queues/queue.producer.js'`).                             | 🔴 Critical | Make producer class extend `Producer<DataType>` and invoke `super()`.             |
+| **Worker Inheritance**        | Extends `Worker` (`import { Worker } from '#aegis/queues/queue.worker.js'`).                                   | 🔴 Critical | Make worker class extend `Worker<DataType>` and invoke `super()`.                 |
+| **Queue Name Consistency**    | Producer and matching Worker must specify the identical `queueName` string.                                    | 🔴 Critical | Fix `queueName` mismatch so jobs are not orphaned in Redis.                       |
+| **Worker Method Purity**      | Worker must implement `execute()`, `failed()`, and `success()`.                                                | 🔴 Critical | Add missing handlers to ensure full lifecycle monitoring.                         |
+| **Strongly Typed Payloads**   | Job payload interfaces declared in `src/jobs/interfaces/` with no `any`.                                       | 🟡 Warning  | Replace `any` with strongly typed interfaces.                                     |
+| **Graceful Shutdown Mounted** | Registered in `src/jobs/index.ts` and `closeAllJobs()` invoked in `src/bootstrap/app.ts` on Fastify `onClose`. | 🟡 Warning  | Ensure workers and producers are registered and closed gracefully to avoid leaks. |
