@@ -42,6 +42,7 @@ ProxyGuard/
 │       └── architecture-auditor/
 ├── src/
 │   ├── main.ts                       # Fastify initialization & server start
+│   ├── configs/                      # Application, database, and system configurations
 │   ├── core/packages/                # Internal aegis framework packages developed by ProxyGuard devs (#aegis/*)
 │   │   ├── controller/
 │   │   │   ├── controller.ts         # Base abstract Controller class
@@ -52,13 +53,14 @@ ProxyGuard/
 │   │       ├── queue.producer.ts     # Base abstract Producer class
 │   │       └── index.ts
 │   ├── bootstrap/
-│   │   ├── app.ts                    # Bootstrap plugins, database, redis, router
-│   │   └── database.ts               # MikroORM init & schema sync
+│   │   └── app.ts                    # Bootstrap application & mount global router
 │   ├── routes/
 │   │   └── router.ts                 # Central /api/v1 router mounting feature plugins
 │   ├── database/
 │   │   ├── db.ts                     # MikroORM EntityManager export & helpers
-│   │   └── entities/                 # MikroORM entities (*.entity.ts)
+│   │   ├── entities/                 # MikroORM entities (*.entity.ts)
+│   │   ├── migrations/               # MikroORM schema migration files
+│   │   └── seeders/                  # MikroORM database seeders
 │   ├── cache/
 │   │   └── redis.ts                  # ioredis client singleton & sticky cache helpers
 │   ├── jobs/
