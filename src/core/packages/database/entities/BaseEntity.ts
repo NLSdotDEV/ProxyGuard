@@ -6,13 +6,14 @@ export abstract class BaseEntity {
   @PrimaryKey({ type: 'uuid', onCreate: () => randomUUIDv7() })
   id: string = randomUUIDv7();
 
-  @Property({ name: 'created_at', onCreate: () => new Date() })
-  createdAt = new Date();
+  @Property({ name: 'created_at', onCreate: () => new Date(), nullable: false })
+  createdAt?: Date = new Date();
 
   @Property({
-    name: 'created_at',
-    onUpdate: () => new Date(),
+    name: 'updated_at',
     onCreate: () => new Date(),
+    onUpdate: () => new Date(),
+    nullable: false
   })
-  updatedAt = new Date();
+  updatedAt?: Date = new Date();
 }

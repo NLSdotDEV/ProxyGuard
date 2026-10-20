@@ -41,23 +41,20 @@ export type ItemResponseSchemaType = Static<typeof ItemResponseSchema>;
 ## 2. Query Service Template (`services/find-item.service.ts`)
 
 ```typescript
-import { EntityManager } from '@mikro-orm/sqlite';
+import { em } from '../../../database/db.js';
 import { ItemEntity } from '../../../database/entities/item.entity.js';
 
 export class FindItemService {
-  constructor(private readonly em: EntityManager) {}
-
   async findAll(filter: Record<string, any> = {}): Promise<ItemEntity[]> {
-    return this.em.find(ItemEntity, filter);
+    return em.find(ItemEntity, filter);
   }
 
   async findOne(id: string): Promise<ItemEntity | null> {
-    return this.em.findOne(ItemEntity, { id });
+    return em.findOne(ItemEntity, { id });
   }
 }
 
-// In real app, em is passed via bootstrap or DI container
-export default new FindItemService({} as EntityManager);
+export default new FindItemService();
 ```
 
 ---
@@ -65,7 +62,7 @@ export default new FindItemService({} as EntityManager);
 ## 3. Single-Action Service Template (`services/create-item.service.ts`)
 
 ```typescript
-import { EntityManager } from '@mikro-orm/sqlite';
+import { em } from '../../../database/db.js';
 import { ItemEntity } from '../../../database/entities/item.entity.js';
 
 // DTO exported directly from the service if single-use
@@ -81,25 +78,24 @@ export interface CreateItemResult {
 }
 
 export class CreateItemService {
-  constructor(private readonly em: EntityManager) {}
-
-  // Single-action class: ONLY handle method!
+  // Single-action class: ONLY handle method! Thin and simple!
   async handle(dto: CreateItemDto): Promise<CreateItemResult> {
-    const item = new ItemEntity();
-    item.name = dto.name;
-    item.description = dto.description;
+    const item = em.create(ItemEntity, {
+      name: dto.name,
+      description: dto.description,
+    });
 
-    await this.em.persistAndFlush(item);
+    await em.flush();
 
     return {
       id: item.id,
       name: item.name,
-      createdAt: item.createdAt.toISOString(),
+      createdAt: item.createdAt?.toISOString() ?? new Date().toISOString(),
     };
   }
 }
 
-export default new CreateItemService({} as EntityManager);
+export default new CreateItemService();
 ```
 
 ---
@@ -108,7 +104,8 @@ export default new CreateItemService({} as EntityManager);
 
 ```typescript
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Controller } from '#aegis/controller/controller.js';
+import { Controller } from '#aegis/http';
+import { HttpStatusCode } from 'axios';
 import findItemService, {
   FindItemService,
 } from './services/find-item.service.js';
@@ -121,29 +118,32 @@ export class ItemController extends Controller {
   constructor(
     private readonly findItemService: FindItemService,
     private readonly createItemService: CreateItemService,
-  ) {}
+  ) {
+    super();
+  }
 
+  // CRUD patterns: findAll, findOne, create, update, delete
   async create(request: FastifyRequest, reply: FastifyReply) {
     const body = request.body as CreateItemSchemaType;
     const result = await this.createItemService.handle(body);
-    reply.status(201).send(result);
+    reply.status(HttpStatusCode.Created).send(result);
   }
 
-  async getAll(request: FastifyRequest, reply: FastifyReply) {
+  async findAll(request: FastifyRequest, reply: FastifyReply) {
     const items = await this.findItemService.findAll();
-    reply.status(200).send(items);
+    reply.status(HttpStatusCode.Ok).send(items);
   }
 
-  async getOne(request: FastifyRequest, reply: FastifyReply) {
+  async findOne(request: FastifyRequest, reply: FastifyReply) {
     const params = request.params as ItemIdParamSchemaType;
     const item = await this.findItemService.findOne(params.id);
     if (!item) {
       reply
-        .status(404)
+        .status(HttpStatusCode.NotFound)
         .send({ error: 'ITEM_NOT_FOUND', message: 'Item not found' });
       return;
     }
-    reply.status(200).send(item);
+    reply.status(HttpStatusCode.Ok).send(item);
   }
 }
 

@@ -19,13 +19,15 @@ Use this checklist to perform code reviews and audits on any file or pull reques
 
 ## 2. Controllers Audit
 
-| Check                    | Requirement                                                                                       | Severity    | Action if Violated                                                                    |
-| :----------------------- | :------------------------------------------------------------------------------------------------ | :---------- | :------------------------------------------------------------------------------------ |
-| **Mandatory Base Class** | Controller extends `Controller` (`import { Controller } from '#aegis/controller/controller.js'`). | 🔴 Critical | Make the controller class extend `Controller` and invoke `super()`.                   |
-| **Single Controller**    | A feature contains **EXACTLY ONE** controller (`<feature>.controller.ts`).                        | 🔴 Critical | Consolidate multiple controllers into the single feature controller.                  |
-| **Direct Route Mapper**  | Controller methods map 1:1 to routes, extracting data and passing directly to services.           | 🔴 Critical | Remove any inline calculations, DB calls, or Redis access; move logic into a service. |
-| **Typed Requests**       | Uses `request.body as SomeType` or Fastify typed route generics.                                  | 🟡 Warning  | Cast or type request body/params using TypeBox `Static` types.                        |
-| **Proper HTTP Status**   | Returns appropriate status codes: `201` for created, `202` for queued jobs, `200` for OK.         | 🟢 Notice   | Align status codes with REST conventions.                                             |
+| Check                    | Requirement                                                                                                                     | Severity    | Action if Violated                                                                    |
+| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------ | :---------- | :------------------------------------------------------------------------------------ |
+| **Mandatory Base Class** | Controller extends `Controller` (`import { Controller } from '#aegis/http'`).                                                   | 🔴 Critical | Make the controller class extend `Controller` and invoke `super()`.                   |
+| **Single Controller**    | A feature contains **EXACTLY ONE** controller (`<feature>.controller.ts`).                                                      | 🔴 Critical | Consolidate multiple controllers into the single feature controller.                  |
+| **Direct Route Mapper**  | Controller methods map 1:1 to routes, extracting data and passing directly to services.                                         | 🔴 Critical | Remove any inline calculations, DB calls, or Redis access; move logic into a service. |
+| **CRUD Method Naming**   | CRUD controller methods MUST use: `findAll`, `findOne`, `create`, `update`, `delete`.                                           | 🔴 Critical | Rename non-standard CRUD methods (e.g. `getAll` -> `findAll`, `getOne` -> `findOne`). |
+| **Action Method Naming** | Action methods use concise verbs (`block`, `lease`) or disambiguated names (`blockAccount`, `blockUser` when precision needed). | 🟡 Warning  | Rename ambiguous action methods to clear action verbs.                                |
+| **Typed Requests**       | Uses `request.body as SomeType` or Fastify typed route generics.                                                                | 🟡 Warning  | Cast or type request body/params using TypeBox `Static` types.                        |
+| **HttpStatusCode Enum**  | Responses use `HttpStatusCode` from `axios` (`HttpStatusCode.Created`, `HttpStatusCode.Ok`, etc.).                              | 🟢 Notice   | Replace magic number status codes with `HttpStatusCode.<Status>`.                     |
 
 ---
 

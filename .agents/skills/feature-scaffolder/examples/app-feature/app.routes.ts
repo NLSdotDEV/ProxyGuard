@@ -18,6 +18,6 @@ export const AppRoutes: FastifyPluginAsync = async (fastify, _opts) => {
 
   fastify.get(
     '/',
-    async (request, reply) => await appController.getAll(request, reply),
+    async (request, reply) => await appController.findAll(request, reply),
   );
 };

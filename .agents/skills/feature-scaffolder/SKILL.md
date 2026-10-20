@@ -56,11 +56,22 @@ For every other operation (e.g., create, update, delete, lease, ban, sync):
 
 ### Step 4: Create the Controller (`<feature>.controller.ts`)
 
-1. **Mandatory Inheritance**: Must extend `Controller` from `#aegis/controller/controller.js` (from `aegis`, the in-house core framework package ecosystem developed by ProxyGuard devs).
+1. **Mandatory Inheritance**: Must extend `Controller` from `#aegis/http` (from `aegis`, the in-house core framework package ecosystem developed by ProxyGuard devs).
 2. **Exactly One Controller**: Only one controller file per feature.
-3. **Pure Route Mapper**: Contains zero business logic. Each method corresponds 1:1 to an endpoint in `<feature>.routes.ts`.
-4. Extracts request input (`request.body`, `params`, `query`), forwards it directly to the designated service (`service.handle(dto)` or `findService.findAll()`), and sends `reply.status(...).send(...)`.
-5. Export both the class and a default instantiated singleton.
+3. **Pure Route Mapper & Thin Code**: Contains zero business logic. Each method corresponds 1:1 to an endpoint in `<feature>.routes.ts`.
+4. **Method Naming Patterns**:
+   - **CRUD Operations**: Methods MUST use standard names:
+     - `findAll(request, reply)`
+     - `findOne(request, reply)`
+     - `create(request, reply)`
+     - `update(request, reply)`
+     - `delete(request, reply)`
+   - **Action Routes**:
+     - Use the action verb by default (e.g. `block(request, reply)`, `lease(request, reply)`).
+     - If multiple related actions exist in the same controller (e.g. blocking account vs blocking user), add precision: `blockAccount(request, reply)` and `blockUser(request, reply)`.
+5. **Status Codes**: Always use `HttpStatusCode` from `axios` (e.g. `reply.status(HttpStatusCode.Created).send(...)` for creations, `reply.status(HttpStatusCode.Ok).send(...)` for queries/updates).
+6. Extracts request input (`request.body`, `params`, `query`), forwards it directly to the designated service (`service.handle(dto)` or `findService.findAll()`), and sends `reply.status(...).send(...)`.
+7. Export both the class and a default instantiated singleton.
 
 ### Step 5: Create the Routes Plugin (`<feature>.routes.ts`)
 
