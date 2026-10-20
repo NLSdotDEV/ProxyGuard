@@ -16,12 +16,12 @@ export async function boostrap(server: FastifyInstance) {
     orm.close();
   });
 
-  // route definition
-  await Router.define(server);
-
   // rate limiting
   await server.register(fastifyRateLimit, {
     max: 100,
     timeWindow: '1 minute',
   });
+
+  // route definition
+  await Router.define(server);
 }

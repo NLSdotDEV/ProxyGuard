@@ -18,7 +18,10 @@ export const ApiKeyRoutes: FastifyPluginAsync = async (fastify, _opts) => {
         },
       },
       config: {
-        rateLimit: 1,
+        rateLimit: {
+          max: process.env.ENV === "production" ? 1 : 5,
+          timeWindow: process.env.ENV === "production" ? "30 minute" : "1 minute"
+        },
       },
     },
     async (request, reply) => await apiKeyController.create(request, reply),

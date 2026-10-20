@@ -13,13 +13,13 @@ import { ProxyEndpoint } from './ProxyEndpoint.js';
 @Entity({ tableName: 'proxy_accounts' })
 @Unique({ properties: ['username', 'password'] })
 export class ProxyAccount extends BaseEntity {
-  @Property()
+  @Property({hidden: true})
   username!: string;
 
-  @Property()
+  @Property({hidden: true})
   password!: string;
 
-  @ManyToOne(() => ApiKey)
+  @ManyToOne(() => ApiKey, {hidden: true})
   apiKey!: Ref<ApiKey>;
 
   @OneToMany(() => ProxyEndpoint, (endpoint) => endpoint.proxy, {
