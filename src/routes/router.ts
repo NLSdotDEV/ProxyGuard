@@ -2,8 +2,6 @@ import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 
 // define routes
 const routes: FastifyPluginAsync = async (_fastify, _opts) => {
-  // Feature route plugins will be registered here, e.g.:
-  // fastify.register(ProxyRoutes, { prefix: 'proxies' });
 };
 
 export class Router {
