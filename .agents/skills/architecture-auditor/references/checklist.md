@@ -74,3 +74,16 @@ Use this checklist to perform code reviews and audits on any file or pull reques
 | **Entity Directory Scope**  | Entities must live directly in `src/database/entities/`. Never in features.                     | 🔴 Critical | Move misplaced entity into `src/database/entities/`.                                       |
 | **Barrel Export in Index**  | All entities exported in `src/database/entities/index.ts`.                                      | 🟡 Warning  | Add `export * from './<Entity>.js';` to `src/database/entities/index.ts`.                  |
 | **UUID Primary Key & Time** | Rely on `BaseEntity` for `id`, `createdAt`, `updatedAt`; do not redeclare them on child entity. | 🟡 Warning  | Remove duplicate primary key and timestamp properties; inherit directly from `BaseEntity`. |
+
+---
+
+## 7. Exceptions Audit
+
+| Check                         | Requirement                                                                                                      | Severity    | Action if Violated                                                                              |
+| :---------------------------- | :--------------------------------------------------------------------------------------------------------------- | :---------- | :---------------------------------------------------------------------------------------------- |
+| **Exception Base Class**      | Every exception MUST extend `Exception` from `#aegis/http` (`import { Exception } from '#aegis/http';`).         | 🔴 Critical | Make exception class extend `Exception` from `#aegis/http` and call `super(code, status, msg)`. |
+| **Feature Scoping**           | Feature-specific domain exceptions (e.g. `ERR_TOKEN_EXPIRED`) must live in `src/features/<feature>/exceptions/`. | 🔴 Critical | Move feature-specific exception to `src/features/<feature>/exceptions/`.                        |
+| **Global HTTP Scope**         | Generic HTTP exceptions (`NotFoundException`, `ConflictException`, etc.) must live in `src/exceptions/`.         | 🔴 Critical | Move generic exception to `src/exceptions/`.                                                    |
+| **HttpStatusCode Enum**       | Exception passes `HttpStatusCode` from `axios` (never a magic number literal).                                   | 🟡 Warning  | Replace numeric status code with `HttpStatusCode.<Name>`.                                       |
+| **Error Code Format**         | `errorCode` must follow screaming snake case: `ERR_<NAME>`.                                                      | 🟡 Warning  | Rename error code to match `ERR_<NAME>` convention.                                             |
+| **Barrel Export Consistency** | Re-exported from `src/exceptions/index.ts` (or feature `exceptions/index.ts` if multiple).                       | 🟢 Notice   | Add barrel re-export statement.                                                                 |

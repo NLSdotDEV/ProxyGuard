@@ -40,6 +40,7 @@ ProxyGuard/
 │       ├── feature-scaffolder/
 │       ├── service-creator/
 │       ├── queue-scaffolder/
+│       ├── exception-creator/
 │       └── architecture-auditor/
 ├── src/
 │   ├── main.ts                       # Fastify initialization & server start
@@ -48,6 +49,8 @@ ProxyGuard/
 │   │   ├── http/
 │   │   │   ├── controllers/
 │   │   │   │   └── controller.ts     # Base abstract Controller class
+│   │   │   ├── exceptions/
+│   │   │   │   └── exception.ts      # Base abstract Exception class
 │   │   │   └── index.ts
 │   │   ├── database/
 │   │   │   ├── entities/
@@ -69,6 +72,9 @@ ProxyGuard/
 │   │   └── seeders/                  # MikroORM database seeders
 │   ├── cache/
 │   │   └── redis.ts                  # ioredis client singleton & sticky cache helpers
+│   ├── exceptions/                   # Global common HTTP exceptions (BadRequestException, NotFoundException, etc.)
+│   │   ├── index.ts
+│   │   └── <name>.exception.ts
 │   ├── jobs/
 │   │   ├── index.ts                  # Central jobs registry & graceful shutdown
 │   │   ├── interfaces/               # Job payload interfaces (*.interface.ts)
@@ -83,6 +89,9 @@ ProxyGuard/
 │           ├── <feature>.routes.ts
 │           ├── <feature>.schema.ts
 │           ├── <feature>.controller.ts
+│           ├── exceptions/           # OPTIONAL: Feature-scoped custom exceptions (e.g. ERR_TOKEN_EXPIRED)
+│           │   ├── index.ts          # Barrel re-export if multiple exceptions
+│           │   └── <name>.exception.ts
 │           └── services/
 │               ├── find-<feature>.service.ts    # OPTIONAL: Only if feature has CRUD/query
 │               └── <action>-<feature>.service.ts # Single-action classes
@@ -256,6 +265,44 @@ export class ApiKey extends BaseEntity {
 }
 ```
 
+### 3.8 Exception Architecture (Global & Feature-Scoped Exceptions)
+
+All HTTP and application exceptions in ProxyGuard inherit from the internal Aegis framework base `Exception` class (`#aegis/http`):
+
+1. **Mandatory Base Class**:
+   - Every exception MUST extend `Exception` from `#aegis/http` (`import { Exception } from '#aegis/http';`).
+   - Base constructor signature: `constructor(errorCode: string, statusCode: number, message?: string)`.
+   - Always use `HttpStatusCode` from `axios` for status codes.
+   - Error code strings must follow uppercase screaming snake case (`ERR_<NAME>`).
+
+2. **Global Common HTTP Exceptions (`src/exceptions/`)**:
+   - Generic, feature-agnostic HTTP exceptions reside in `src/exceptions/` (e.g., `BadRequestException`, `UnauthorizedException`, `ForbiddenException`, `NotFoundException`, `ConflictException`, `InternalServerErrorException`).
+   - Use standard HTTP error codes: `ERR_BAD_REQUEST`, `ERR_NOT_FOUND`, `ERR_CONFLICT`, etc.
+   - Every global exception is re-exported from `src/exceptions/index.ts`.
+
+3. **Feature-Scoped Domain Exceptions (`src/features/<feature>/exceptions/`)**:
+   - When a feature requires custom domain exceptions with dedicated error codes (e.g. `ERR_TOKEN_EXPIRED`, `ERR_PROXY_POOL_EXHAUSTED`, `ERR_ACCOUNT_INACTIVE`):
+     - Create an `exceptions/` directory inside the feature: `src/features/<feature>/exceptions/`.
+     - File naming: `<name>.exception.ts` (e.g. `token-expired.exception.ts`).
+     - Class naming: `<Name>Exception` (e.g. `TokenExpiredException`).
+     - Must extend `Exception` from `#aegis/http`.
+     - Pass the custom error code, appropriate `HttpStatusCode` from `axios`, and an optional default or custom message.
+     - If multiple exceptions exist in the feature, re-export them via `src/features/<feature>/exceptions/index.ts`.
+     - Single-action services in that feature throw these exceptions directly when business or domain validation fails.
+     - Never place generic HTTP exceptions into a feature's `exceptions/` directory, and never place feature-specific exceptions into `src/exceptions/`.
+
+```typescript
+// src/features/auth/exceptions/token-expired.exception.ts
+import { Exception } from '#aegis/http';
+import { HttpStatusCode } from 'axios';
+
+export class TokenExpiredException extends Exception {
+  constructor(message: string = 'Token has expired') {
+    super('ERR_TOKEN_EXPIRED', HttpStatusCode.Unauthorized, message);
+  }
+}
+```
+
 ---
 
 ## 4. Route Registration Architecture
@@ -330,6 +377,7 @@ Route registration follows a strict hierarchy:
 - **Controller Base Class**: Every controller MUST extend `Controller` from `#aegis/http` (`import { Controller } from '#aegis/http';`).
 - **Entity Base Class**: Every database entity MUST live inside `src/database/entities/` and MUST extend `BaseEntity` from `#aegis/database` (`import { BaseEntity } from '#aegis/database';`).
 - **Producer & Worker Base Classes**: Every queue producer MUST extend `Producer` from `#aegis/queues` (`import { Producer } from '#aegis/queues';`), and every queue worker MUST extend `Worker` from `#aegis/queues` (`import { Worker } from '#aegis/queues';`).
+- **Exception Base Class & Scoping**: Every custom or HTTP exception MUST extend `Exception` from `#aegis/http` (`import { Exception } from '#aegis/http';`). Generic HTTP exceptions live in `src/exceptions/`. Feature-scoped exceptions with custom error codes (e.g. `ERR_TOKEN_EXPIRED`) MUST live in `src/features/<feature>/exceptions/`.
 - **One Controller per Feature**: Never create multiple controllers within a feature.
 - **ESM Imports**: All relative TypeScript imports must include the `.js` extension (e.g., `import { Router } from '../routes/router.js';`).
 - **Linter & Formatter**: Run `npm run lint` and `npm run format` after modifications.

@@ -74,6 +74,17 @@ Check every `.service.ts` file:
 2. **BaseEntity Inheritance**: Verify that every entity extends `BaseEntity` from `#aegis/database` (`import { BaseEntity } from '#aegis/database';`).
 3. **Index Re-export**: Verify that all entities are re-exported in `src/database/entities/index.ts`.
 
+### Step 7: Scan Exceptions
+
+1. **Base Class Inheritance**: Verify that all exceptions extend `Exception` from `#aegis/http` (`import { Exception } from '#aegis/http';`).
+2. **Proper Scoping**:
+   - Generic HTTP exceptions (e.g. `NotFoundException`, `ConflictException`) must reside in `src/exceptions/`.
+   - Feature-specific domain exceptions with custom error codes (e.g. `ERR_TOKEN_EXPIRED`) must reside in `src/features/<feature>/exceptions/`.
+   - Flag any feature exceptions placed globally or generic HTTP exceptions placed in features as **Architecture Violations**.
+3. **Status Code Enum**: Verify that `HttpStatusCode` from `axios` is used for status codes instead of numeric literals.
+4. **Error Code Format**: Verify that error codes use uppercase screaming snake case starting with `ERR_`.
+5. **Re-export Check**: Verify that `src/exceptions/index.ts` re-exports all global exceptions, and `src/features/<feature>/exceptions/index.ts` re-exports feature exceptions when multiple exist.
+
 ---
 
 ## Detailed Audit Checklist
