@@ -5,7 +5,7 @@ import { ProxyAccount } from './ProxyAccount.js';
 
 @Entity({ tableName: 'api_keys' })
 export class ApiKey extends BaseEntity {
-  @Property({ type: 'string' })
+  @Property({ type: 'string', hidden: true })
   secret!: string;
 
   @OneToMany(() => ProxyAccount, (proxyAccount) => proxyAccount.apiKey)
