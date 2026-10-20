@@ -45,8 +45,13 @@ ProxyGuard/
 │   ├── main.ts                       # Fastify initialization & server start
 │   ├── configs/                      # Application, database, and system configurations
 │   ├── core/packages/                # Internal aegis framework packages developed by ProxyGuard devs (#aegis/*)
-│   │   ├── controller/
-│   │   │   ├── controller.ts         # Base abstract Controller class
+│   │   ├── http/
+│   │   │   ├── controllers/
+│   │   │   │   └── controller.ts     # Base abstract Controller class
+│   │   │   └── index.ts
+│   │   ├── database/
+│   │   │   ├── entities/
+│   │   │   │   └── BaseEntity.ts     # Base abstract BaseEntity class
 │   │   │   └── index.ts
 │   │   └── queues/
 │   │       ├── queue.ts              # Base abstract Queue class
@@ -59,7 +64,7 @@ ProxyGuard/
 │   │   └── router.ts                 # Central /api/v1 router mounting feature plugins
 │   ├── database/
 │   │   ├── db.ts                     # MikroORM EntityManager export & helpers
-│   │   ├── entities/                 # MikroORM entities (*.entity.ts)
+│   │   ├── entities/                 # MikroORM entities (*.ts) extending BaseEntity (#aegis/database)
 │   │   ├── migrations/               # MikroORM schema migration files
 │   │   └── seeders/                  # MikroORM database seeders
 │   ├── cache/
@@ -206,6 +211,34 @@ All asynchronous background tasks, queues, and workers are organized under `src/
    - Must export a `closeAllJobs()` function that closes workers first, then producers, to avoid dropping active jobs.
    - Hooked to Fastify's `onClose` hook in `src/bootstrap/app.ts`.
 
+### 3.7 Database Entity Architecture (`BaseEntity`)
+
+All database entities managed by MikroORM reside in `src/database/entities/`:
+
+1. **Mandatory Base Class**:
+   - Every entity MUST extend `BaseEntity` from `#aegis/database` (`import { BaseEntity } from '#aegis/database';`).
+   - `BaseEntity` automatically manages:
+     - `id`: Primary key using UUID v7 (`randomUUIDv7()`).
+     - `createdAt`: Timestamp automatically generated on creation (`created_at`).
+     - `updatedAt`: Timestamp automatically updated on update (`created_at`).
+     - Composite index across `["id", "createdAt", "updatedAt"]`.
+2. **Entity Location & Naming**:
+   - All entities MUST live inside `src/database/entities/` (e.g. `ApiKey.ts`, `ProxyAccount.ts`).
+   - Never place entity classes inside `src/features/`.
+3. **Re-export in Index**:
+   - All entities must be re-exported in `src/database/entities/index.ts` (`export * from './<Entity>.js';`).
+
+```typescript
+import { Entity, Property } from '@mikro-orm/decorators/es';
+import { BaseEntity } from '#aegis/database';
+
+@Entity({ tableName: 'api_keys' })
+export class ApiKey extends BaseEntity {
+  @Property({ type: 'string' })
+  secret!: string;
+}
+```
+
 ---
 
 ## 4. Route Registration Architecture
@@ -276,9 +309,10 @@ Route registration follows a strict hierarchy:
 
 ## 6. Coding Rules & Constraints
 
-- **Core Framework Packages (`#aegis/*`)**: All reusable framework foundation packages, base classes (including `Controller`, `Queue`, `Worker`, `Producer`), and future engine primitives are packages **developed in-house by ProxyGuard developers**. The package ecosystem is strictly named **`aegis`** (and ONLY `aegis`, similar to Laravel's `Illuminate`). They reside under `src/core/packages/` and are imported exclusively via `#aegis/*`. No other internal package names or aliases may be created.
-- **Controller Base Class**: Every controller MUST extend `Controller` from `#aegis/controller/controller.js`.
-- **Producer & Worker Base Classes**: Every queue producer MUST extend `Producer` from `#aegis/queues/queue.producer.js`, and every queue worker MUST extend `Worker` from `#aegis/queues/queue.worker.js`.
+- **Core Framework Packages (`#aegis/*`)**: All reusable framework foundation packages, base classes (including `Controller`, `BaseEntity`, `Queue`, `Worker`, `Producer`), and future engine primitives are packages **developed in-house by ProxyGuard developers**. The package ecosystem is strictly named **`aegis`** (and ONLY `aegis`, similar to Laravel's `Illuminate`). They reside under `src/core/packages/` and are imported exclusively via `#aegis/*` (`#aegis/http`, `#aegis/database`, `#aegis/queues`). No other internal package names or aliases may be created.
+- **Controller Base Class**: Every controller MUST extend `Controller` from `#aegis/http` (`import { Controller } from '#aegis/http';`).
+- **Entity Base Class**: Every database entity MUST live inside `src/database/entities/` and MUST extend `BaseEntity` from `#aegis/database` (`import { BaseEntity } from '#aegis/database';`).
+- **Producer & Worker Base Classes**: Every queue producer MUST extend `Producer` from `#aegis/queues` (`import { Producer } from '#aegis/queues';`), and every queue worker MUST extend `Worker` from `#aegis/queues` (`import { Worker } from '#aegis/queues';`).
 - **One Controller per Feature**: Never create multiple controllers within a feature.
 - **ESM Imports**: All relative TypeScript imports must include the `.js` extension (e.g., `import { Router } from '../routes/router.js';`).
 - **Linter & Formatter**: Run `npm run lint` and `npm run format` after modifications.
