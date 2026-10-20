@@ -64,6 +64,12 @@ Check every `.service.ts` file:
 4. **Interface Contract**: Verify that job payloads are strongly typed in `src/jobs/interfaces/*.interface.ts` (no `any`).
 5. **Registry & Shutdown**: Verify that workers and producers are listed in `src/jobs/index.ts` and that `closeAllJobs()` is hooked into Fastify's `onClose`.
 
+### Step 6: Scan Database Entities in `src/database/entities/`
+
+1. **Entity Location**: Verify that all entity files reside directly inside `src/database/entities/`.
+2. **BaseEntity Inheritance**: Verify that every entity extends `BaseEntity` from `#aegis/database` (`import { BaseEntity } from '#aegis/database';`).
+3. **Index Re-export**: Verify that all entities are re-exported in `src/database/entities/index.ts`.
+
 ---
 
 ## Detailed Audit Checklist

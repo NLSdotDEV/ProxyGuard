@@ -8,7 +8,7 @@ These rules are strictly enforced across the entire ProxyGuard codebase. Coding 
 
 - **Every feature controller MUST extend the abstract `Controller` class**:
   ```typescript
-  import { Controller } from '#aegis/controller/controller.js';
+  import { Controller } from '#aegis/http';
 
   export class FeatureController extends Controller {
     constructor(...) {
@@ -162,6 +162,32 @@ All asynchronous background tasks, queues, and workers reside in `src/jobs/` and
 4. **Single-Action Service Dispatch**:
    - Single-action services dispatch jobs by invoking the singleton producer's `dispatch()` method.
    - Controller returns `202 Accepted` immediately upon job dispatch.
+
+---
+
+## Rule 11: Database Entities & BaseEntity Inheritance
+
+All MikroORM database entities must adhere strictly to these architectural standards:
+
+1. **Mandatory Base Class**:
+   - Every entity MUST extend `BaseEntity` from `#aegis/database` (`import { BaseEntity } from '#aegis/database';`).
+   - `BaseEntity` provides UUID v7 primary keys (`id: string`), auto-managed timestamps (`createdAt`, `updatedAt`), and composite indexing.
+2. **Entity Location**:
+   - All entity files MUST live directly inside `src/database/entities/` (e.g. `src/database/entities/ApiKey.ts`).
+   - Entities must NEVER be declared inside `src/features/` or other subfolders.
+3. **Barrel Re-export**:
+   - Every entity must be exported in `src/database/entities/index.ts` (`export * from './<Entity>.js';`).
+4. **Example Entity Definition**:
+   ```typescript
+   import { Entity, Property } from '@mikro-orm/decorators/es';
+   import { BaseEntity } from '#aegis/database';
+
+   @Entity({ tableName: 'api_keys' })
+   export class ApiKey extends BaseEntity {
+     @Property({ type: 'string' })
+     secret!: string;
+   }
+   ```
 
 > [!NOTE]
 > **Why "Aegis"? (Greek Mythology Context)**

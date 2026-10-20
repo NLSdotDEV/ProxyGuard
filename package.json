@@ -8,6 +8,10 @@
       "types": "./src/core/packages/http/index.ts",
       "default": "./build/core/packages/http/index.js"
     },
+    "#aegis/database": {
+      "types": "./src/core/packages/database/index.ts",
+      "default": "./build/core/packages/database/index.ts"
+    },
     "#aegis/queues": {
       "types": "./src/core/packages/queues/index.ts",
       "default": "./build/core/packages/queues/index.js"
@@ -15,6 +19,10 @@
     "#aegis/*": {
       "types": "./src/core/packages/*",
       "default": "./build/core/packages/*"
+    },
+    "#entity": {
+      "types": "./src/database/entities/index.ts",
+      "default": "./build/database/entities/index.js"
     }
   },
   "scripts": {
@@ -22,7 +30,9 @@
     "start": "node build/main.js",
     "dev": "nodemon --watch src -e ts --exec \"tsx src/main.ts\"",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "migration:create": "npx mikro-orm migration:create",
+    "migration:up": "npx mikro-orm migration:up"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

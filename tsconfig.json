@@ -8,8 +8,10 @@
     "rootDir": "src",
     "paths": {
       "#aegis/http": ["./src/core/packages/http/index.ts"],
+      "#aegis/database": ["./src/core/packages/database/index.ts"],
       "#aegis/queues": ["./src/core/packages/queues/index.ts"],
-      "#aegis/*": ["./src/core/packages/*"]
+      "#aegis/*": ["./src/core/packages/*"],
+      "#entities": ["./src/database/entities/index.ts"]
     },
     "strict": true,
     "esModuleInterop": true,

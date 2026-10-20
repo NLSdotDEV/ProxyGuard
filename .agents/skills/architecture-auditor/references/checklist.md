@@ -61,3 +61,14 @@ Use this checklist to perform code reviews and audits on any file or pull reques
 | **Worker Method Purity**      | Worker must implement `execute()`, `failed()`, and `success()`.                                                | 🔴 Critical | Add missing handlers to ensure full lifecycle monitoring.                         |
 | **Strongly Typed Payloads**   | Job payload interfaces declared in `src/jobs/interfaces/` with no `any`.                                       | 🟡 Warning  | Replace `any` with strongly typed interfaces.                                     |
 | **Graceful Shutdown Mounted** | Registered in `src/jobs/index.ts` and `closeAllJobs()` invoked in `src/bootstrap/app.ts` on Fastify `onClose`. | 🟡 Warning  | Ensure workers and producers are registered and closed gracefully to avoid leaks. |
+
+---
+
+## 6. Database Entities Audit
+
+| Check                       | Requirement                                                                                     | Severity    | Action if Violated                                                                         |
+| :-------------------------- | :---------------------------------------------------------------------------------------------- | :---------- | :----------------------------------------------------------------------------------------- |
+| **BaseEntity Inheritance**  | Every entity MUST extend `BaseEntity` (`import { BaseEntity } from '#aegis/database';`).        | 🔴 Critical | Make entity class extend `BaseEntity` from `#aegis/database`.                              |
+| **Entity Directory Scope**  | Entities must live directly in `src/database/entities/`. Never in features.                     | 🔴 Critical | Move misplaced entity into `src/database/entities/`.                                       |
+| **Barrel Export in Index**  | All entities exported in `src/database/entities/index.ts`.                                      | 🟡 Warning  | Add `export * from './<Entity>.js';` to `src/database/entities/index.ts`.                  |
+| **UUID Primary Key & Time** | Rely on `BaseEntity` for `id`, `createdAt`, `updatedAt`; do not redeclare them on child entity. | 🟡 Warning  | Remove duplicate primary key and timestamp properties; inherit directly from `BaseEntity`. |
