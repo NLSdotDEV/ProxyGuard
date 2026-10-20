@@ -204,6 +204,46 @@ All MikroORM database entities must adhere strictly to these architectural stand
    }
    ```
 
+---
+
+## Rule 12: Exception Architecture & Scoping
+
+All exceptions in ProxyGuard must strictly follow the two-tier hierarchy and inherit from the internal Aegis framework base `Exception` class:
+
+1. **Mandatory Base Class**:
+   - Every exception MUST extend `Exception` from `#aegis/http` (`import { Exception } from '#aegis/http';`).
+   - Constructor must invoke `super(errorCode, statusCode, message)`:
+     - `errorCode`: Uppercase screaming snake case identifier (`ERR_<NAME>`).
+     - `statusCode`: HTTP status code represented via `HttpStatusCode` from `axios`.
+     - `message`: Optional descriptive error message.
+2. **Global Common HTTP Exceptions (`src/exceptions/`)**:
+   - Generic HTTP exceptions (e.g. `BadRequestException`, `NotFoundException`, `ConflictException`, `UnauthorizedException`, `ForbiddenException`) belong in `src/exceptions/`.
+   - Never define generic HTTP exceptions inside a feature directory.
+   - All global exceptions must be exported in `src/exceptions/index.ts`.
+3. **Feature-Scoped Domain Exceptions (`src/features/<feature>/exceptions/`)**:
+   - When a feature defines custom error codes specific to its domain (e.g. `ERR_TOKEN_EXPIRED`, `ERR_PROXY_POOL_EXHAUSTED`, `ERR_ACCOUNT_INACTIVE`):
+     - An `exceptions/` directory must be created within that feature: `src/features/<feature>/exceptions/`.
+     - File naming: `<name>.exception.ts` (e.g. `token-expired.exception.ts`).
+     - Class naming: `<Name>Exception` (e.g. `TokenExpiredException`).
+     - Must extend `Exception` from `#aegis/http`.
+     - Re-export all feature exceptions in `src/features/<feature>/exceptions/index.ts` when multiple exceptions exist.
+   - Never put feature-scoped exceptions into `src/exceptions/`.
+4. **Throwing Exceptions**:
+   - Single-action services throw these exceptions directly during business validation failures.
+   - Controllers let them bubble up or handle them cleanly without polluting controllers with business validation.
+
+```typescript
+// src/features/auth/exceptions/token-expired.exception.ts
+import { Exception } from '#aegis/http';
+import { HttpStatusCode } from 'axios';
+
+export class TokenExpiredException extends Exception {
+  constructor(message: string = 'Token has expired') {
+    super('ERR_TOKEN_EXPIRED', HttpStatusCode.Unauthorized, message);
+  }
+}
+```
+
 > [!NOTE]
 > **Why "Aegis"? (Greek Mythology Context)**
 > In Greek mythology, the **Aegis** (αἰγίς) is the impenetrable shield or garment borne by Zeus and wielded by Athena, goddess of wisdom, intellect, and battle strategy. It provided total protection against harm and struck intimidation into threats. We chose **Aegis** because it serves as the ultimate defensive shield for ProxyGuard: deflecting anti-bot bans, insulating core logic from proxy volatility, and enforcing disciplined, single-action architectural wisdom.
