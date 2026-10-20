@@ -26,22 +26,4 @@ export const ApiKeyRoutes: FastifyPluginAsync = async (fastify, _opts) => {
     },
     async (request, reply) => await apiKeyController.create(request, reply),
   );
-
-  fastify.post(
-    '/request',
-    {
-      preValidation: async (request) => {
-        if (request.body === undefined || request.body === null) {
-          request.body = {};
-        }
-      },
-      schema: {
-        response: {
-          200: ApiKeySchema.response,
-          201: ApiKeySchema.response,
-        },
-      },
-    },
-    async (request, reply) => await apiKeyController.create(request, reply),
-  );
 };
