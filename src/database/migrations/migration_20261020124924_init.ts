@@ -1,8 +1,8 @@
 import { Migration } from '@mikro-orm/migrations';
 
-export class Migration20261020055137 extends Migration {
+export class Migration20261020124924_init extends Migration {
 
-  override name = 'Migration20261020055137';
+  override name = 'Migration20261020124924_init';
 
   override up(): void | Promise<void> {
     this.addSql(`create table \`api_keys\` (\`id\` text not null primary key, \`created_at\` datetime not null, \`updated_at\` datetime not null, \`secret\` text not null);`);
@@ -18,13 +18,9 @@ export class Migration20261020055137 extends Migration {
     this.addSql(`create table \`proxy_bans\` (\`id\` text not null primary key, \`created_at\` datetime not null, \`updated_at\` datetime not null, \`host_target\` text not null, \`endpoint_id\` text not null, constraint \`proxy_bans_endpoint_id_foreign\` foreign key (\`endpoint_id\`) references \`proxy_endpoints\` (\`id\`));`);
     this.addSql(`create index \`proxy_bans_endpoint_id_index\` on \`proxy_bans\` (\`endpoint_id\`);`);
     this.addSql(`create unique index \`proxy_bans_host_target_endpoint_id_unique\` on \`proxy_bans\` (\`host_target\`, \`endpoint_id\`);`);
-
-    this.addSql(`drop table if exists \`tests\`;`);
   }
 
   override down(): void | Promise<void> {
-
-    this.addSql(`create table \`tests\` (\`id\` integer not null primary key autoincrement, \`name\` TEXT not null);`);
 
     this.addSql(`drop table if exists \`api_keys\`;`);
     this.addSql(`drop table if exists \`proxy_accounts\`;`);

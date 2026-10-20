@@ -20,11 +20,26 @@ These rules are strictly enforced across the entire ProxyGuard codebase. Coding 
 
 ---
 
-## Rule 2: Controller is Strictly a Direct Route Mapper
+## Rule 2: Controller is Strictly a Direct Route Mapper & Method Naming
 
 - **Zero Business Logic**: Controllers never perform calculations, direct database queries, or cache manipulations.
 - **1:1 Route Mapping**: Every method on the controller corresponds directly to a route endpoint mapped in `<feature>.routes.ts`.
-- **Pure Data Handoff**: The controller method extracts data from the request (`request.body`, `request.params`, `request.query`, headers), forwards it to the appropriate service (`service.handle(dto)` or `findService.findAll()` / `findService.findOne()`), and sends the response (`reply.status(...).send(...)`).
+- **Pure Data Handoff**: The controller method extracts data from the request (`request.body`, `request.params`, `request.query`, headers), forwards it to the appropriate service (`service.handle(dto)` or `findService.findAll()` / `findService.findOne()`), and sends the response.
+- **Method Naming Patterns**:
+  - **CRUD Operations**: Methods handling standard CRUD operations MUST use standard names:
+    - `findAll(request, reply)`
+    - `findOne(request, reply)`
+    - `create(request, reply)`
+    - `update(request, reply)`
+    - `delete(request, reply)`
+  - **Action Routes**: Methods handling specific domain actions:
+    - Use the direct action verb by default: e.g. `block(request, reply)`, `lease(request, reply)`.
+    - When multiple related actions or targets exist within the same controller (e.g., blocking an account vs blocking a user), add explicit target precision: `blockAccount(request, reply)` and `blockUser(request, reply)`.
+- **Status Code Standards**: Always use `HttpStatusCode` from `axios` (e.g. `reply.status(HttpStatusCode.Created).send(...)` for creations, `reply.status(HttpStatusCode.Ok).send(...)` for reads/updates).
+- **Thin & Simple Architecture**: Keep code simple and thin. Avoid unnecessary wrapper layers or defensive bloat.
+  - Direct `em` usage: `import { em } from '../../../database/db.js'` (`em.create(Entity, { ... })`, `await em.flush()`).
+  - Plain text secrets are 64 characters (`randomBytes(32).toString('hex')`) and must be hashed using `argon2` before database persistence.
+  - Dates in API responses must be formatted as ISO 8601 strings (`toISOString()`).
 
 ---
 

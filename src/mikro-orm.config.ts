@@ -3,7 +3,12 @@ import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 import { SqliteDriver } from '@mikro-orm/sqlite';
 import { SeedManager } from '@mikro-orm/seeder';
 import { Migrator } from '@mikro-orm/migrations';
-import { ApiKey, ProxyAccount, ProxyBan, ProxyEndpoint } from './database/entities/index.js';
+import {
+  ApiKey,
+  ProxyAccount,
+  ProxyBan,
+  ProxyEndpoint,
+} from './database/entities/index.js';
 
 export default defineConfig({
   dbName: 'src/storage/db.sqlite',
@@ -14,7 +19,7 @@ export default defineConfig({
     pathTs: './src/database/migrations',
     path: './build/database/migrations',
     fileName(timestamp, name) {
-      return `migration_${timestamp}_${name}`;
+      return `migration_${timestamp}` + (name ? `_${name}` : "");
     },
   },
   seeder: {

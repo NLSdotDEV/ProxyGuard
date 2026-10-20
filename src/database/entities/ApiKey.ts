@@ -8,6 +8,6 @@ export class ApiKey extends BaseEntity {
   @Property({ type: 'string' })
   secret!: string;
 
-  @OneToMany(() => ProxyAccount, proxyAccount => proxyAccount.apiKey)
+  @OneToMany(() => ProxyAccount, (proxyAccount) => proxyAccount.apiKey)
   proxyAccounts = new Collection<ProxyAccount>(this);
 }

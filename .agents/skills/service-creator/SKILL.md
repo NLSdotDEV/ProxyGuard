@@ -43,7 +43,12 @@ Are you adding a service in src/features/<feature>/services/?
 4. **DTO Placement**:
    - Single-use DTO/interface: Declare and export in the service file.
    - Cross-feature shared interface: Import from `src/shared/interfaces/`.
-5. **Constructor Injection**: Inject dependencies (MikroORM `EntityManager`, Redis `Redis`, BullMQ `Queue`, or internal `#aegis/*` framework abstractions) through the constructor. All internal framework classes belong exclusively to the in-house `aegis` ecosystem.
+5. **Thin and Simple Implementation**:
+   - Keep services lean, thin, and focused. Avoid over-engineering, verbose abstraction cascades, or unnecessary layers.
+   - For database operations, use direct `em` from `src/database/db.js` (`em.create(Entity, { ... })`, `await em.flush()`).
+   - When generating credentials/secrets, generate 64-character hex strings (`randomBytes(32).toString('hex')`) and hash with `argon2` before saving to the database.
+   - Format entity timestamps returned in DTOs as ISO 8601 strings (`toISOString()`).
+6. **Constructor Injection**: Inject dependencies (MikroORM `EntityManager`, Redis `Redis`, BullMQ `Queue`, or internal `#aegis/*` framework abstractions) through the constructor when needed, or rely on clean direct imports. All internal framework classes belong exclusively to the in-house `aegis` ecosystem.
 
 ---
 

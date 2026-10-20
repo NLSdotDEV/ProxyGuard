@@ -38,10 +38,14 @@ Check every `.service.ts` file:
 
 ### Step 2: Scan Controllers in `src/features/*/*.controller.ts`
 
-1. **Inheritance Check**: Verify that every controller extends `Controller` from `#aegis/controller/controller.js`.
+1. **Inheritance Check**: Verify that every controller extends `Controller` from `#aegis/http`.
 2. **Single Controller Check**: Verify that each feature directory contains **EXACTLY ONE** controller file (`<feature>.controller.ts`).
 3. **Route Mapper Check**: Verify that methods map 1:1 to endpoints in `<feature>.routes.ts`. Methods must only extract request data, call `service.handle()` or `findService.findAll()/findOne()`, and call `reply.send()`.
-4. Flag any database queries, Redis calls, or direct business calculations in controllers as **Architecture Violations**.
+4. **Method Naming Pattern Check**:
+   - For CRUD operations, verify that methods are named: `findAll`, `findOne`, `create`, `update`, `delete`. Flag arbitrary CRUD names like `getAll`, `getOne` as violations.
+   - For action routes, verify that concise action verbs are used (`block`, `lease`), adding target precision when multiple actions could collide in the same controller (`blockAccount`, `blockUser`).
+5. **Status Code Standards Check**: Verify that `HttpStatusCode` from `axios` is used (e.g. `HttpStatusCode.Created`, `HttpStatusCode.Ok`) instead of hardcoded numbers.
+6. Flag any database queries, Redis calls, or direct business calculations in controllers as **Architecture Violations**.
 
 ### Step 3: Scan Routes and Schemas
 

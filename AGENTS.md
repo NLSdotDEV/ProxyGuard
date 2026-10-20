@@ -120,19 +120,36 @@ Every feature under `src/features/<feature>/` must strictly follow the architect
 
 ### 3.3 Controller (`<feature>.controller.ts`) — Rules & Responsibilities
 
-- **Mandatory Base Class**: Every controller **MUST extend the abstract `Controller` class** (`import { Controller } from '#aegis/controller/controller.js'`).
+- **Mandatory Base Class**: Every controller **MUST extend the abstract `Controller` class** (`import { Controller } from '#aegis/http';`).
 - **Exactly One Controller per Feature**: A feature must contain **only one** controller file (`<feature>.controller.ts`).
 - **Pure Route Mapper**: The controller is directly a route mapper.
   - It contains **ZERO business logic**.
   - Each method in the controller represents a route mapped inside the feature itself.
   - It grabs data from the request (`request.body`, `request.params`, `request.query`, headers) and passes it down to the appropriate service (`service.handle(dto)` or `findService.findAll()` / `findService.findOne()`).
-  - Sends the response and status code back to the client (`reply.status(...).send(...)`).
+  - Sends the response and status code back to the client using `HttpStatusCode` from `axios` (`reply.status(HttpStatusCode.Created).send(...)`).
+- **Method Naming Patterns**:
+  - **CRUD Operations**: Methods handling standard CRUD operations MUST use standard names:
+    - `findAll(request, reply)`
+    - `findOne(request, reply)`
+    - `create(request, reply)`
+    - `update(request, reply)`
+    - `delete(request, reply)`
+  - **Action Routes**: Methods handling specific domain actions:
+    - Use the direct action verb by default: e.g. `block(request, reply)`, `lease(request, reply)`.
+    - When multiple related actions or targets exist within the same controller (e.g., blocking an account vs blocking a user), add explicit target precision: `blockAccount(request, reply)` and `blockUser(request, reply)`.
+- **Status Code Standards**: Always use `HttpStatusCode` from `axios` (e.g. `HttpStatusCode.Created` for `create`, `HttpStatusCode.Ok` for reads/updates, `HttpStatusCode.NoContent` for deletes).
+- **Thin & Simple Architecture**:
+  - Keep controllers and services thin, simple, and readable without defensive bloat or over-engineering.
+  - Direct `em` usage via `import { em } from '../../../database/db.js'` (`em.create(Entity, { ... })`, `await em.flush()`).
+  - Plain text API secrets are generated as 64-character strings (`randomBytes(32).toString('hex')`) and must be hashed using `argon2` before database persistence.
+  - Timestamps returned in API response schemas must be ISO 8601 formatted strings (`toISOString()`).
 - Injects services via constructor and calls `super()`.
 - Export both the class and a default instantiated singleton.
 
 ```typescript
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { Controller } from '#aegis/controller/controller.js';
+import { Controller } from '#aegis/http';
+import { HttpStatusCode } from 'axios';
 import leaseProxyService, {
   LeaseProxyService,
 } from './services/lease-proxy.service.js';
@@ -143,11 +160,11 @@ export class ProxyController extends Controller {
     super();
   }
 
-  // Each method directly maps to a route in proxy.routes.ts
+  // Action route method directly maps to a route in proxy.routes.ts
   async lease(request: FastifyRequest, reply: FastifyReply) {
     const body = request.body as LeaseProxySchemaType;
     const response = await this.leaseProxyService.handle(body);
-    reply.status(200).send(response);
+    reply.status(HttpStatusCode.Ok).send(response);
   }
 }
 
