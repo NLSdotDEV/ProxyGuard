@@ -50,6 +50,7 @@
     "@fastify/cookie": "^11.1.3",
     "@fastify/env": "^7.0.1",
     "@fastify/multipart": "^10.1.4",
+    "@fastify/rate-limit": "^11.2.1",
     "@fastify/type-provider-typebox": "^6.3.0",
     "@mikro-orm/cli": "^7.2.5",
     "@mikro-orm/core": "^7.2.5",
