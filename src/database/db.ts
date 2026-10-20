@@ -7,4 +7,5 @@ export let orm: MikroORM;
 export async function initDatabase() {
   orm = await MikroORM.init(mikroOrmConfig as Options);
   em = orm.em;
+  await orm.migrator.up();
 }
