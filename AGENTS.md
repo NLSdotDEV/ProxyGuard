@@ -77,8 +77,9 @@ ProxyGuard/
 │   │   └── <name>.exception.ts
 │   ├── jobs/
 │   │   ├── index.ts                  # Central jobs registry & graceful shutdown
+│   │   ├── constants.ts              # Central queue names dictionary (queue.<name>)
 │   │   ├── interfaces/               # Job payload interfaces (*.interface.ts)
-│   │   ├── queues/                   # BullMQ Producer classes (*.producer.ts)
+│   │   ├── producers/                # BullMQ Producer classes (*.producer.ts)
 │   │   └── workers/                  # BullMQ Worker classes (*.worker.ts)
 │   ├── shared/
 │   │   ├── guards/                   # Fastify preHandler hooks (e.g. api-key.guard.ts)
@@ -214,15 +215,18 @@ export default new ProxyController(leaseProxyService);
 
 All asynchronous background tasks, queues, and workers are organized under `src/jobs/` and must strictly adhere to the following standards:
 
-1. **Mandatory Base Classes**:
+1. **Queue Names Constants (`src/jobs/constants.ts`)**:
+   - All queue names must be defined in `src/jobs/constants.ts` within the `queue` object (e.g. `queue.syncSubaccountProxies = 'sync-subaccount-proxies'`).
+   - Producers and workers import the queue name directly from `constants.ts` (`protected override queueName = queue.syncSubaccountProxies;`).
+2. **Mandatory Base Classes**:
    - Every queue producer must extend `Producer<DataType, ResultType>` (`import { Producer } from '#aegis/queues/queue.producer.js'`).
    - Every queue worker must extend `Worker<DataType, ResultType>` (`import { Worker } from '#aegis/queues/queue.worker.js'`).
-2. **Producer Requirements (`src/jobs/queues/<job>.producer.ts`)**:
-   - Must specify `protected override queueName = '<job-name>'`.
+3. **Producer Requirements (`src/jobs/producers/<job>.producer.ts`)**:
+   - Must specify `protected override queueName = queue.<name>`.
    - Must implement `dispatch(data: DataType, opts?: JobsOptions): Promise<Job<DataType, ResultType>>` using `this.queue.add(...)`.
    - Must export both the class and a default/instantiated singleton instance.
-3. **Worker Requirements (`src/jobs/workers/<job>.worker.ts`)**:
-   - Must specify matching `protected override queueName = '<job-name>'`.
+4. **Worker Requirements (`src/jobs/workers/<job>.worker.ts`)**:
+   - Must specify matching `protected override queueName = queue.<name>`.
    - Can optionally override `protected override concurrency = <number>` (default: 5).
    - Must implement:
      - `execute(job: Job<DataType, ResultType>, token?: string): Promise<ResultType>` (the core processing logic).
@@ -230,9 +234,9 @@ All asynchronous background tasks, queues, and workers are organized under `src/
      - `success(job: Job<DataType, ResultType>, result: ResultType, prev?: string): Promise<void> | void` (success notifications/logging).
    - Workers automatically boot and connect on instantiation via the base class.
    - Must export both the class and an instantiated singleton.
-4. **Job Interfaces (`src/jobs/interfaces/<job>.interface.ts`)**:
+5. **Job Interfaces (`src/jobs/interfaces/<job>.interface.ts`)**:
    - All job payload interfaces must be strongly typed and stored in `src/jobs/interfaces/` so both producers and consumers share the same contract.
-5. **Central Registry & Graceful Shutdown (`src/jobs/index.ts`)**:
+6. **Central Registry & Graceful Shutdown (`src/jobs/index.ts`)**:
    - All active workers and producers must be registered in arrays (`workers`, `producers`) in `src/jobs/index.ts`.
    - Must export a `closeAllJobs()` function that closes workers first, then producers, to avoid dropping active jobs.
    - Hooked to Fastify's `onClose` hook in `src/bootstrap/app.ts`.

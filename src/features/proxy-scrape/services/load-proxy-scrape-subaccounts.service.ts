@@ -3,53 +3,49 @@ import {
   BadGatewayException,
   UnauthorizedException,
 } from '../../../exceptions/index.js';
+import syncSubaccountProxiesProducer from '../../../jobs/producers/sync-subaccount-proxies.producer.js';
+
+export interface ProxyScrapeSubAccount {
+  AccountID: string;
+  AccountType: string;
+  label: string;
+  is_hidden: boolean;
+  time_added: number;
+}
 
 export interface LoadProxyScrapeSubAccountsDto {
   readonly secret: string;
 }
 
-export interface ProxyScrapeSubaccount {
-  AccountID: string,
-  AccountType: string,
-  label: string,
-  is_hidden: boolean,
-  time_added: number
-}
-
-export interface ProxyScrapeSubAccountResponse {
-  success: boolean;
-  data: {
-    subaccounts: ProxyScrapeSubaccount[];
-    total: number;
-  };
-}
-
 export class LoadProxyScrapeSubAccountsService {
-  /**
-   * Requests ProxyScrape to load all subaccounts linked to the provided secret.
-   */
-  async handle(dto: LoadProxyScrapeSubAccountsDto): Promise<unknown> {
-    const subAccounts = await this.requestSubAccounts(dto.secret);
-    return subAccounts;
-  }
-
-  private async requestSubAccounts(secret: string): Promise<ProxyScrapeSubAccountResponse> {
-    const baseUrl = process.env.PROXY_SCRAPE_BASE_API_URL;
-
-    const subAccountUrl = `${baseUrl}/account/subaccounts`;
-    const headers = {
-      'api-token': secret,
-    };
+  async handle(
+    dto: LoadProxyScrapeSubAccountsDto,
+  ): Promise<ProxyScrapeSubAccount | null> {
+    const baseUrl =
+      process.env.PROXY_SCRAPE_BASE_API_URL ?? 'https://api.proxyscrape.com/v4';
 
     try {
-      const response = await axios.get(subAccountUrl, {
-        headers,
+      const response = await axios.get<{
+        success: boolean;
+        data: { subaccounts: ProxyScrapeSubAccount[]; total: number };
+      }>(`${baseUrl}/account/subaccounts`, {
+        headers: {
+          'api-token': dto.secret,
+        },
         timeout: 10000,
       });
 
-      const data = response.data as ProxyScrapeSubAccountResponse;
+      const firstSubAccount = response.data?.data?.subaccounts?.[0];
+      if (!firstSubAccount) {
+        return null;
+      }
 
-      return data;
+      await syncSubaccountProxiesProducer.dispatch({
+        subAccountId: firstSubAccount.AccountID,
+        secret: dto.secret,
+      });
+
+      return firstSubAccount;
     } catch (error) {
       if (isAxiosError(error)) {
         const status = error.response?.status;

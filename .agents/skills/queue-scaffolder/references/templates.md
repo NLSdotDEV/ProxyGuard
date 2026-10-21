@@ -19,21 +19,22 @@ export interface <JobName>JobData {
 
 ## 2. Producer Template
 
-File: `src/jobs/queues/<job-name>.producer.ts`
+File: `src/jobs/producers/<job-name>.producer.ts`
 
 ```typescript
 import { Producer } from '#aegis/queues/queue.producer.js';
 import { JobsOptions, Job } from 'bullmq';
+import { queue } from '../constants.js';
 import { <JobName>JobData } from '../interfaces/<job-name>.interface.js';
 
 export class <JobName>Producer extends Producer<<JobName>JobData> {
-  protected override queueName = '<job-name>';
+  protected override queueName = queue.<jobName>;
 
   async dispatch(
     data: <JobName>JobData,
     opts?: JobsOptions,
   ): Promise<Job<<JobName>JobData>> {
-    return await this.queue.add('<job-name>-task', data, {
+    return await this.queue.add(`${queue.<jobName>}-task`, data, {
       attempts: 3,
       backoff: {
         type: 'exponential',
@@ -57,10 +58,11 @@ File: `src/jobs/workers/<job-name>.worker.ts`
 ```typescript
 import { Worker } from '#aegis/queues/queue.worker.js';
 import { Job } from 'bullmq';
+import { queue } from '../constants.js';
 import { <JobName>JobData } from '../interfaces/<job-name>.interface.js';
 
 export class <JobName>Worker extends Worker<<JobName>JobData> {
-  protected override queueName = '<job-name>';
+  protected override queueName = queue.<jobName>;
   protected override concurrency = 5;
 
   async execute(job: Job<<JobName>JobData>): Promise<void> {

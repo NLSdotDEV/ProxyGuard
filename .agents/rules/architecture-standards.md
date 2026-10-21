@@ -167,9 +167,10 @@ All asynchronous background tasks, queues, and workers reside in `src/jobs/` and
    - Every queue producer MUST extend `Producer<DataType, ResultType>` from `#aegis/queues/queue.producer.js`.
    - Every queue worker MUST extend `Worker<DataType, ResultType>` from `#aegis/queues/queue.worker.js`.
 2. **Directory Structure**:
+   - `src/jobs/constants.ts`: Central dictionary defining all queue names (`export const queue = { ... } as const;`).
    - `src/jobs/interfaces/<job>.interface.ts`: Strongly-typed payload interface shared between producer and worker.
-   - `src/jobs/queues/<job>.producer.ts`: Producer class setting `protected override queueName` and implementing `dispatch(...)`.
-   - `src/jobs/workers/<job>.worker.ts`: Worker class setting matching `protected override queueName`, optional `concurrency`, and implementing `execute(job)`, `failed(job, error)`, and `success(job, result)`.
+   - `src/jobs/producers/<job>.producer.ts`: Producer class setting `protected override queueName = queue.<name>` and implementing `dispatch(...)`.
+   - `src/jobs/workers/<job>.worker.ts`: Worker class setting matching `protected override queueName = queue.<name>`, optional `concurrency`, and implementing `execute(job)`, `failed(job, error)`, and `success(job, result)`.
    - `src/jobs/index.ts`: Central registry collecting all active workers and producers.
 3. **Graceful Shutdown**:
    - `src/jobs/index.ts` must export `closeAllJobs(): Promise<void>` closing workers first, then producers.

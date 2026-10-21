@@ -62,7 +62,7 @@ Check every `.service.ts` file:
 
 ### Step 5: Scan Background Jobs & Queues in `src/jobs/`
 
-1. **Producer Inheritance**: Verify that all producers in `src/jobs/queues/*.producer.ts` extend `Producer` from `#aegis/queues/queue.producer.js` and implement `dispatch()`.
+1. **Producer Inheritance**: Verify that all producers in `src/jobs/producers/*.producer.ts` extend `Producer` from `#aegis/queues/queue.producer.js` and implement `dispatch()`.
 2. **Worker Inheritance**: Verify that all workers in `src/jobs/workers/*.worker.ts` extend `Worker` from `#aegis/queues/queue.worker.js` and implement `execute()`, `failed()`, and `success()`.
 3. **Queue Name Consistency**: Verify that producer and worker matching a job share the exact same `queueName`.
 4. **Interface Contract**: Verify that job payloads are strongly typed in `src/jobs/interfaces/*.interface.ts` (no `any`).

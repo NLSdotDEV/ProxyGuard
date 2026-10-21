@@ -11,6 +11,9 @@ export const ProxyScrapeRoutes: FastifyPluginAsync = async (fastify, _opts) => {
     {
       schema: {
         body: ProxyScrapeSchema.loadSubAccounts,
+        response: {
+          200: ProxyScrapeSchema.loadSubAccountsResponse,
+        },
       },
     },
     async (request, reply) =>
