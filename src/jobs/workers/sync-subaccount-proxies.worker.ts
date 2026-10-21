@@ -2,6 +2,22 @@ import { Worker } from '#aegis/queues/queue.worker.js';
 import { Job } from 'bullmq';
 import { queue } from '../constants.js';
 import { SyncSubaccountProxiesJobData } from '../interfaces/sync-subaccount-proxies.interface.js';
+import axios from 'axios';
+import { em } from '../../database/db.js';
+import { ApiKey, ProxyAccount } from '../../database/entities/index.js';
+
+interface ProxyScrapeOverviewResponse {
+  status: string;
+  data?: {
+    services?: {
+      datacenter_shared?: {
+        proxy_username?: string;
+        proxy_password?: string;
+        expiration_time?: number;
+      };
+    };
+  };
+}
 
 export class SyncSubaccountProxiesWorker extends Worker<
   SyncSubaccountProxiesJobData,
@@ -17,8 +33,57 @@ export class SyncSubaccountProxiesWorker extends Worker<
   private async syncSubaccount(
     data: SyncSubaccountProxiesJobData,
   ): Promise<void> {
-    const { subAccountId } = data;
-    console.log(`Processing subaccount ID: ${subAccountId}`);
+    const { subAccountId, secret, apiKeyId } = data;
+
+    const baseUrl =
+      process.env.PROXY_SCRAPE_BASE_API_URL ?? 'https://api.proxyscrape.com/v4';
+
+    const requestUrl = `${baseUrl}/account/${subAccountId}/datacenter_shared/overview`;
+    const headers = {
+      'api-token': secret,
+    };
+
+    const response = await axios.get<ProxyScrapeOverviewResponse>(requestUrl, {
+      headers,
+    });
+
+    if (response.data?.status === 'valid') {
+      const datacenter = response.data?.data?.services?.datacenter_shared;
+      if (datacenter?.proxy_username && datacenter?.proxy_password) {
+        if (!datacenter.expiration_time) {
+          return;
+        }
+
+        const expiresAt = new Date(datacenter.expiration_time * 1000);
+        if (expiresAt.getTime() <= Date.now()) {
+          return;
+        }
+
+        const fork = em.fork();
+        const apiKey = await fork.findOne(ApiKey, { id: apiKeyId });
+        if (!apiKey) {
+          throw new Error(`ApiKey not found for id ${apiKeyId}`);
+        }
+
+        let proxyAccount = await fork.findOne(ProxyAccount, {
+          username: datacenter.proxy_username,
+          password: datacenter.proxy_password,
+        });
+
+        if (!proxyAccount) {
+          proxyAccount = fork.create(ProxyAccount, {
+            username: datacenter.proxy_username,
+            password: datacenter.proxy_password,
+            apiKey,
+            expiresAt,
+          });
+        } else {
+          proxyAccount.expiresAt = expiresAt;
+        }
+
+        await fork.flush();
+      }
+    }
   }
 
   failed(

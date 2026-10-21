@@ -15,6 +15,7 @@ export interface ProxyScrapeSubAccount {
 
 export interface LoadProxyScrapeSubAccountsDto {
   readonly secret: string;
+  readonly apiKeyId: string;
 }
 
 export class LoadProxyScrapeSubAccountsService {
@@ -43,6 +44,7 @@ export class LoadProxyScrapeSubAccountsService {
       await syncSubaccountProxiesProducer.dispatch({
         subAccountId: firstSubAccount.AccountID,
         secret: dto.secret,
+        apiKeyId: dto.apiKeyId,
       });
 
       return firstSubAccount;

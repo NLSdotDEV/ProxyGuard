@@ -18,7 +18,11 @@ export class ProxyScrapeController extends Controller {
     reply: FastifyReply,
   ): Promise<void> {
     const body = request.body as LoadProxyScrapeSubAccountsType;
-    const response = await this.loadProxyScrapeSubAccountsService.handle(body);
+    const apiKeyId = request.headers['api-key-id']?.toString() ?? '';
+    const response = await this.loadProxyScrapeSubAccountsService.handle({
+      ...body,
+      apiKeyId,
+    });
     reply.status(HttpStatusCode.Ok).send(response);
   }
 }
