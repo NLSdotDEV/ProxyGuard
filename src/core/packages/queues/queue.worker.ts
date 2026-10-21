@@ -66,3 +66,5 @@ export abstract class AegisWorker<
     prev?: string,
   ): Promise<void> | void;
 }
+
+export { AegisWorker as Worker };

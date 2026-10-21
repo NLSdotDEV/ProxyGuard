@@ -18,9 +18,10 @@ All background job infrastructure resides under `src/jobs/`:
 ```text
 src/jobs/
 ├── index.ts                              # Central registry & bulk graceful shutdown
+├── constants.ts                          # Queue names dictionary (queue.<name>)
 ├── interfaces/
 │   └── <job-name>.interface.ts           # Shared payload interface contract
-├── queues/
+├── producers/
 │   └── <job-name>.producer.ts            # Producer class extending Aegis Producer
 └── workers/
     └── <job-name>.worker.ts              # Worker class extending Aegis Worker

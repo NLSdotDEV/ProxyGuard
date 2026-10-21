@@ -19,26 +19,9 @@ export const ApiKeyRoutes: FastifyPluginAsync = async (fastify, _opts) => {
       },
       config: {
         rateLimit: {
-          max: process.env.ENV === "production" ? 1 : 5,
-          timeWindow: process.env.ENV === "production" ? "30 minute" : "1 minute"
-        },
-      },
-    },
-    async (request, reply) => await apiKeyController.create(request, reply),
-  );
-
-  fastify.post(
-    '/request',
-    {
-      preValidation: async (request) => {
-        if (request.body === undefined || request.body === null) {
-          request.body = {};
-        }
-      },
-      schema: {
-        response: {
-          200: ApiKeySchema.response,
-          201: ApiKeySchema.response,
+          max: process.env.ENV === 'production' ? 1 : 5,
+          timeWindow:
+            process.env.ENV === 'production' ? '30 minute' : '1 minute',
         },
       },
     },

@@ -13,7 +13,7 @@ export abstract class BaseEntity {
     name: 'updated_at',
     onCreate: () => new Date(),
     onUpdate: () => new Date(),
-    nullable: false
+    nullable: false,
   })
   updatedAt?: Date = new Date();
 }

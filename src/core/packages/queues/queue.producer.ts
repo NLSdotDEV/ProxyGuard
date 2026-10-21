@@ -28,3 +28,5 @@ export abstract class AegisProducer<
     }
   }
 }
+
+export { AegisProducer as Producer };

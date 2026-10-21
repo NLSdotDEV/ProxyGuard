@@ -19,7 +19,7 @@ export default defineConfig({
     pathTs: './src/database/migrations',
     path: './build/database/migrations',
     fileName(timestamp, name) {
-      return `migration_${timestamp}` + (name ? `_${name}` : "");
+      return `migration_${timestamp}` + (name ? `_${name}` : '');
     },
   },
   seeder: {
