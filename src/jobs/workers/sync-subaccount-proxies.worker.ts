@@ -5,6 +5,7 @@ import { SyncSubaccountProxiesJobData } from '../interfaces/sync-subaccount-prox
 import axios from 'axios';
 import { em } from '../../database/db.js';
 import { ApiKey, ProxyAccount } from '../../database/entities/index.js';
+import syncProxyEndpointsProducer from '../producers/sync-proxy-endpoints.producer.js';
 
 interface ProxyScrapeOverviewResponse {
   status: string;
@@ -82,6 +83,12 @@ export class SyncSubaccountProxiesWorker extends Worker<
         }
 
         await fork.flush();
+
+        await syncProxyEndpointsProducer.dispatch({
+          subAccountId,
+          secret,
+          proxyAccountId: proxyAccount.id,
+        });
       }
     }
   }
