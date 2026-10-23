@@ -51,6 +51,8 @@ services:
     image: caddy:2-alpine
     container_name: proxyguard-caddy
     restart: unless-stopped
+    profiles:
+      - caddy
     environment:
       - ALLOWED_INTERNAL_IPS=${ALLOWED_INTERNAL_IPS:-127.0.0.1}
       - UPSTREAM=app:3000

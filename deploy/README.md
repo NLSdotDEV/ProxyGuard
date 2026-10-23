@@ -75,31 +75,25 @@ Adjust `ALLOWED_INTERNAL_IPS` if you have specific internal or VPN IP addresses 
 
 ### 3. Build & Launch Containers
 
-#### Option A: If Caddy runs on your host (e.g., via `/etc/caddy/config.d/`)
+#### Option A: Host Caddy (Recommended if your host already runs Caddy)
 
 1. Copy the Caddy snippet to your host Caddy config directory:
    ```bash
    sudo cp deploy/proxyguard.caddy /etc/caddy/config.d/proxyguard.caddy
    sudo systemctl reload caddy
    ```
-2. Start only the `app` and `redis` containers:
+2. Start the `app` and `redis` containers:
    ```bash
-   docker compose -f deploy/docker-compose.yml up -d --build app redis
+   docker compose -f deploy/docker-compose.yml up -d --build
    ```
-   _(The app container binds to `127.0.0.1:3000` on the host, where host Caddy forwards traffic)._
+   _(By default, this spins up `app` and `redis`. The app binds to `127.0.0.1:3000` on the host, where host Caddy forwards traffic)._
 
-#### Option B: If running everything (including Caddy) in Docker
+#### Option B: Dockerized Caddy (Standalone server without host Caddy)
 
-From the project root:
-
-```bash
-docker compose -f deploy/docker-compose.yml up -d --build
-```
-
-Or from the `deploy/` directory:
+If you don't run Caddy on the host system, use the `caddy` profile to run Caddy inside Docker:
 
 ```bash
-cd deploy && docker compose up -d --build
+docker compose -f deploy/docker-compose.yml --profile caddy up -d --build
 ```
 
 ### 4. Verify Health
