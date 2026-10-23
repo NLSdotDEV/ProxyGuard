@@ -21,7 +21,7 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    # Bound to loopback interface only (never exposed directly to public 0.0.0.0)
+    # Bound to host loopback interface only for Caddy reverse proxy (never exposed to public 0.0.0.0)
     ports:
       - '127.0.0.1:${APP_PORT:-3000}:3000'
 
@@ -43,9 +43,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    # Bound to loopback interface only (never exposed directly to public 0.0.0.0)
-    ports:
-      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+    # Redis is completely internal to proxyguard-network (no host ports exposed)
 
   caddy:
     image: caddy:2-alpine
@@ -54,7 +52,6 @@ services:
     profiles:
       - caddy
     environment:
-      - ALLOWED_INTERNAL_IPS=${ALLOWED_INTERNAL_IPS:-127.0.0.1}
       - UPSTREAM=app:3000
     ports:
       - '80:80'

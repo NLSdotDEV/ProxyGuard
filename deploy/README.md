@@ -33,10 +33,10 @@ This directory contains the production Docker deployment stack and Caddy reverse
 
 ## Key Security Features
 
-1. **Internal IP Isolation**:
-   - `app` and `redis` ports are **NOT** published on `0.0.0.0`. They are strictly mapped to the loopback interface (`127.0.0.1`) on the host, preventing external access bypassing Caddy.
-   - In [`proxyguard.caddy`](./proxyguard.caddy), access to `proxy-guard.nxlive.site` is restricted to private IP ranges (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `100.64.0.0/10`), loopback (`127.0.0.1`), and any custom server IPs defined in `ALLOWED_INTERNAL_IPS`.
-   - External web traffic attempting to reach the domain receives an immediate `403 Forbidden`.
+1. **Internal Container Isolation**:
+   - `redis` publishes **NO ports** on the host. It is completely isolated inside `proxyguard-network`, accessible only to the `app` container via hostname `redis`.
+   - `app` is strictly mapped to the host loopback interface (`127.0.0.1:3000`) and **never exposed to `0.0.0.0`**. External access must pass through Caddy reverse proxy over HTTPS.
+   - ProxyGuard's API key guard (`x-api-key`) protects application endpoints from unauthorized access.
 
 2. **Real Client IP Anti-Spoofing**:
    - Caddy strips any client-provided `X-Forwarded-For` and `X-Real-IP` headers and replaces them strictly with `{remote_host}` (the genuine client TCP socket address).
