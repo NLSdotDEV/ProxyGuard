@@ -19,9 +19,12 @@ export const ApiKeyRoutes: FastifyPluginAsync = async (fastify, _opts) => {
       },
       config: {
         rateLimit: {
-          max: process.env.ENV === 'production' ? 1 : 5,
+          max:
+            (process.env.NODE_ENV ?? process.env.ENV) === 'production' ? 1 : 5,
           timeWindow:
-            process.env.ENV === 'production' ? '30 minute' : '1 minute',
+            (process.env.NODE_ENV ?? process.env.ENV) === 'production'
+              ? '30 minute'
+              : '1 minute',
         },
       },
     },

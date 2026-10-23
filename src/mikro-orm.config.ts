@@ -28,5 +28,5 @@ export default defineConfig({
   },
   extensions: [SeedManager, Migrator],
   entities: [ApiKey, ProxyAccount, ProxyBan, ProxyEndpoint],
-  debug: true,
+  debug: (process.env.NODE_ENV ?? process.env.ENV) !== 'production',
 });

@@ -73,6 +73,13 @@ export async function boostrap(server: FastifyInstance) {
     timeWindow: '1 minute',
   });
 
+  // health check
+  server.get('/health', async (_request, reply) => {
+    reply
+      .status(200)
+      .send({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // route definition
   await Router.define(server);
 }

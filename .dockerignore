@@ -1,0 +1,11 @@
+node_modules
+build
+.git
+.env
+.env.*
+!.env.example
+src/storage/db.sqlite*
+npm-debug.log*
+.DS_Store
+deploy/caddy-data
+deploy/caddy-config

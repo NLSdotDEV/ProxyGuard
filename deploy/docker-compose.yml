@@ -1,0 +1,83 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: proxyguard-app
+    restart: unless-stopped
+    environment:
+      - ENV=${ENV:-production}
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3000
+      - HOST=0.0.0.0
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - PROXY_SCRAPE_BASE_API_URL=${PROXY_SCRAPE_BASE_API_URL:-https://api.proxyscrape.com/v4}
+    volumes:
+      - app-storage:/app/src/storage
+    networks:
+      - proxyguard-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Bound to loopback interface only (never exposed directly to public 0.0.0.0)
+    ports:
+      - '127.0.0.1:${APP_PORT:-3000}:3000'
+
+  redis:
+    image: redis:7-alpine
+    container_name: proxyguard-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 2gb
+      --maxmemory-policy noeviction
+    volumes:
+      - redis-data:/data
+    networks:
+      - proxyguard-network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # Bound to loopback interface only (never exposed directly to public 0.0.0.0)
+    ports:
+      - '127.0.0.1:${REDIS_PORT:-6379}:6379'
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: proxyguard-caddy
+    restart: unless-stopped
+    environment:
+      - ALLOWED_INTERNAL_IPS=${ALLOWED_INTERNAL_IPS:-127.0.0.1}
+      - UPSTREAM=app:3000
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./proxyguard.caddy:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - proxyguard-network
+    depends_on:
+      - app
+
+networks:
+  proxyguard-network:
+    driver: bridge
+    name: proxyguard-network
+
+volumes:
+  app-storage:
+    driver: local
+  redis-data:
+    driver: local
+  caddy-data:
+    driver: local
+  caddy-config:
+    driver: local
