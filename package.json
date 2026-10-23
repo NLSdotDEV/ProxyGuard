@@ -10,7 +10,7 @@
     },
     "#aegis/database": {
       "types": "./src/core/packages/database/index.ts",
-      "default": "./build/core/packages/database/index.ts"
+      "default": "./build/core/packages/database/index.js"
     },
     "#aegis/queues": {
       "types": "./src/core/packages/queues/index.ts",

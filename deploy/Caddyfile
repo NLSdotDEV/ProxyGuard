@@ -1,0 +1,65 @@
+# ==============================================================================
+# ProxyGuard Caddy Configuration
+# Domain: proxy-guard.nxlive.site
+# ==============================================================================
+
+proxy-guard.nxlive.site {
+    # --------------------------------------------------------------------------
+    # 1. Security Headers
+    # --------------------------------------------------------------------------
+    header {
+        # HTTP Strict Transport Security (HSTS) with subdomains and preload
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # Prevent clickjacking / frame embedding
+        X-Frame-Options "DENY"
+        # Strict referrer policy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Restrict browser permissions/capabilities
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+        # Strict API Content Security Policy
+        Content-Security-Policy "default-src 'none'; frame-ancestors 'none';"
+        # Legacy XSS protection
+        X-XSS-Protection "1; mode=block"
+        # Strip server signature
+        -Server
+    }
+
+    # --------------------------------------------------------------------------
+    # 2. Access Control: Restrict to Internal Server / Private IPs Only
+    # --------------------------------------------------------------------------
+    # Matches loopback, private ranges (RFC 1918, CGNAT), and optional server internal IPs
+    @internal {
+        client_ip private_ranges 127.0.0.1 ::1 {$ALLOWED_INTERNAL_IPS:127.0.0.1}
+    }
+
+    # Reject any public web traffic with 403 Forbidden
+    @denied {
+        not client_ip private_ranges 127.0.0.1 ::1 {$ALLOWED_INTERNAL_IPS:127.0.0.1}
+    }
+    respond @denied "Forbidden: Access restricted to internal server network" 403
+
+    # --------------------------------------------------------------------------
+    # 3. Reverse Proxy with Real Client IP Enforcement
+    # --------------------------------------------------------------------------
+    # Forward exclusively to the internal app container.
+    # We overwrite X-Forwarded-For and X-Real-IP with {remote_host} to prevent
+    # clients from spoofing their IP address via custom headers.
+    handle @internal {
+        reverse_proxy app:3000 {
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+        }
+    }
+
+    # --------------------------------------------------------------------------
+    # 4. Structured JSON Logging
+    # --------------------------------------------------------------------------
+    log {
+        output stdout
+        format json
+    }
+}
