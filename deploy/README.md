@@ -73,7 +73,22 @@ cp deploy/.env.example deploy/.env
 
 Adjust `ALLOWED_INTERNAL_IPS` if you have specific internal or VPN IP addresses that should be permitted.
 
-### 3. Build & Launch
+### 3. Build & Launch Containers
+
+#### Option A: If Caddy runs on your host (e.g., via `/etc/caddy/config.d/`)
+
+1. Copy the Caddy snippet to your host Caddy config directory:
+   ```bash
+   sudo cp deploy/proxyguard.caddy /etc/caddy/config.d/proxyguard.caddy
+   sudo systemctl reload caddy
+   ```
+2. Start only the `app` and `redis` containers:
+   ```bash
+   docker compose -f deploy/docker-compose.yml up -d --build app redis
+   ```
+   _(The app container binds to `127.0.0.1:3000` on the host, where host Caddy forwards traffic)._
+
+#### Option B: If running everything (including Caddy) in Docker
 
 From the project root:
 

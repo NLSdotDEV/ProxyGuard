@@ -53,6 +53,7 @@ services:
     restart: unless-stopped
     environment:
       - ALLOWED_INTERNAL_IPS=${ALLOWED_INTERNAL_IPS:-127.0.0.1}
+      - UPSTREAM=app:3000
     ports:
       - '80:80'
       - '443:443'
