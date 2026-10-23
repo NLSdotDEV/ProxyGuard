@@ -35,6 +35,7 @@ FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
 

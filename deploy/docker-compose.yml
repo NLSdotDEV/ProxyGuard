@@ -6,8 +6,8 @@ services:
     container_name: proxyguard-app
     restart: unless-stopped
     environment:
-      - ENV=production
-      - NODE_ENV=production
+      - ENV=${ENV:-production}
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
       - HOST=0.0.0.0
       - REDIS_HOST=redis
@@ -58,7 +58,7 @@ services:
       - '443:443'
       - '443:443/udp'
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./proxyguard.caddy:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
     networks:
