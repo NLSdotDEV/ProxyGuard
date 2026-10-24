@@ -52,9 +52,43 @@ const ProxyItemResponseSchema = Type.Object(
   },
 );
 
+const UpdateProxySchema = Type.Object(
+  {
+    endpointId: Type.String({
+      description: 'The unique identifier of the proxy endpoint',
+    }),
+  },
+  {
+    description:
+      'Request payload for updating proxy and checking account validity',
+  },
+);
+
+const UpdateProxyResponseSchema = Type.Object(
+  {
+    success: Type.Boolean({
+      description: 'Whether the validation job was successfully queued',
+    }),
+    message: Type.String({
+      description: 'Operation summary message',
+    }),
+    endpointId: Type.String({
+      description: 'The endpoint ID submitted for verification',
+    }),
+    status: Type.String({
+      description: 'The status of the validation process',
+    }),
+  },
+  {
+    description: 'Response payload for proxy update dispatch',
+  },
+);
+
 export const ProxySchema = {
   lease: LeaseProxySchema,
   refresh: RefreshProxyLeaseSchema,
+  update: UpdateProxySchema,
+  updateResponse: UpdateProxyResponseSchema,
   response: ProxyItemResponseSchema,
   leasedResponse: ProxyItemResponseSchema,
   request: LeaseProxySchema,
@@ -64,4 +98,6 @@ export type LeaseProxySchemaType = Static<typeof LeaseProxySchema>;
 export type RefreshProxyLeaseSchemaType = Static<
   typeof RefreshProxyLeaseSchema
 >;
+export type UpdateProxySchemaType = Static<typeof UpdateProxySchema>;
+export type UpdateProxyResponseType = Static<typeof UpdateProxyResponseSchema>;
 export type ProxyItemResponseType = Static<typeof ProxyItemResponseSchema>;

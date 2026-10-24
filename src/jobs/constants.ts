@@ -1,6 +1,7 @@
 export const queue = {
   syncSubaccountProxies: 'sync-subaccount-proxies',
   syncProxyEndpoints: 'sync-proxy-endpoints',
+  checkProxyAccount: 'check-proxy-account',
 } as const;
 
 export const queues = queue;
