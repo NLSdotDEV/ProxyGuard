@@ -87,3 +87,15 @@ Use this checklist to perform code reviews and audits on any file or pull reques
 | **HttpStatusCode Enum**       | Exception passes `HttpStatusCode` from `axios` (never a magic number literal).                                   | 🟡 Warning  | Replace numeric status code with `HttpStatusCode.<Name>`.                                       |
 | **Error Code Format**         | `errorCode` must follow screaming snake case: `ERR_<NAME>`.                                                      | 🟡 Warning  | Rename error code to match `ERR_<NAME>` convention.                                             |
 | **Barrel Export Consistency** | Re-exported from `src/exceptions/index.ts` (or feature `exceptions/index.ts` if multiple).                       | 🟢 Notice   | Add barrel re-export statement.                                                                 |
+
+---
+
+## 8. Postman Collection & Environment Synchronization Audit
+
+| Check                            | Requirement                                                                                                                                          | Severity    | Action if Violated                                                                             |
+| :------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- | :---------- | :--------------------------------------------------------------------------------------------- |
+| **All Routes in Collection**     | Every endpoint registered in `src/routes/router.ts` and `src/bootstrap/app.ts` MUST exist in `docs/postman/ProxyGuard.postman_collection.json`.      | 🔴 Critical | Add missing endpoint with request body, headers, sample response, and `pm.test` assertions.    |
+| **No Deleted/Stale Routes**      | If an endpoint was removed or deprecated in the codebase, it MUST NOT remain in the collection.                                                      | 🔴 Critical | Delete the stale endpoint and its test cases from `ProxyGuard.postman_collection.json`.        |
+| **Unused Env Variable Pruning**  | If an environment variable is not used in any request, or if the endpoint that used it was deleted, it MUST NOT remain in environment files.         | 🔴 Critical | Delete the unused variable from both `ProxyGuard.postman_environment.json` and production env. |
+| **Variable Reference Integrity** | Every `{{variable}}` referenced in `ProxyGuard.postman_collection.json` MUST be defined in `ProxyGuard.postman_environment.json`.                    | 🟡 Warning  | Add missing variable to the environment file with a sensible default or placeholder.           |
+| **Auth Headers Present**         | Guarded endpoints (`HasValidApiKeyGuard`) must include `api-key-id: {{apiKeyId}}` and `api-key-secret: {{apiKeySecret}}` in Postman request headers. | 🟡 Warning  | Add missing API key auth headers to the request in the collection.                             |
