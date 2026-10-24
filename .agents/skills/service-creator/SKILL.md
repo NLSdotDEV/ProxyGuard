@@ -49,6 +49,7 @@ Are you adding a service in src/features/<feature>/services/?
    - When generating credentials/secrets, generate 64-character hex strings (`randomBytes(32).toString('hex')`) and hash with `argon2` before saving to the database.
    - Format entity timestamps returned in DTOs as ISO 8601 strings (`toISOString()`).
 6. **Constructor Injection**: Inject dependencies (MikroORM `EntityManager`, Redis `Redis`, BullMQ `Queue`, or internal `#aegis/*` framework abstractions) through the constructor when needed, or rely on clean direct imports. All internal framework classes belong exclusively to the in-house `aegis` ecosystem.
+7. **Postman Synchronization**: When a service creates or alters an endpoint route, immediately update `docs/postman/ProxyGuard.postman_collection.json`. When an endpoint is removed, delete it from the collection and prune unused environment variables from `docs/postman/*.postman_environment.json`.
 
 ---
 

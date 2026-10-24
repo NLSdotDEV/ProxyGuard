@@ -245,6 +245,38 @@ export class TokenExpiredException extends Exception {
 }
 ```
 
+---
+
+## Rule 13: Postman Collection & Environment Synchronization
+
+All API endpoints must be documented and tested in Postman files under `docs/postman/`:
+
+- Collection: `docs/postman/ProxyGuard.postman_collection.json`
+- Local Environment: `docs/postman/ProxyGuard.postman_environment.json`
+- Production Environment: `docs/postman/ProxyGuard.production.postman_environment.json`
+
+### 1. New Endpoint Addition
+
+Whenever a new endpoint is registered:
+
+- Add it immediately to `ProxyGuard.postman_collection.json` under its feature folder.
+- Define HTTP method, full parameterized URL (`{{baseUrl}}/api/v1/...`), request headers (including `api-key-id` and `api-key-secret` if guarded), request body payload, and automated tests (`pm.test`).
+- If the endpoint introduces new variables, add them to `ProxyGuard.postman_environment.json` and `ProxyGuard.production.postman_environment.json`.
+
+### 2. Endpoint Removal / Deletion
+
+Whenever an endpoint is removed or deprecated from the application:
+
+- Immediately delete that endpoint from `ProxyGuard.postman_collection.json`.
+- Remove all corresponding tests, mock responses, and folder items.
+
+### 3. Pruning Unused Environment Variables
+
+Whenever an environment variable is no longer referenced anywhere in the Postman collection, or if the only endpoint that used it was deleted:
+
+- The variable MUST be deleted from both `ProxyGuard.postman_environment.json` and `ProxyGuard.production.postman_environment.json`.
+- Orphaned or unused environment variables are strictly forbidden.
+
 > [!NOTE]
 > **Why "Aegis"? (Greek Mythology Context)**
 > In Greek mythology, the **Aegis** (αἰγίς) is the impenetrable shield or garment borne by Zeus and wielded by Athena, goddess of wisdom, intellect, and battle strategy. It provided total protection against harm and struck intimidation into threats. We chose **Aegis** because it serves as the ultimate defensive shield for ProxyGuard: deflecting anti-bot bans, insulating core logic from proxy volatility, and enforcing disciplined, single-action architectural wisdom.

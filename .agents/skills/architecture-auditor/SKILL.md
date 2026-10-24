@@ -85,6 +85,18 @@ Check every `.service.ts` file:
 4. **Error Code Format**: Verify that error codes use uppercase screaming snake case starting with `ERR_`.
 5. **Re-export Check**: Verify that `src/exceptions/index.ts` re-exports all global exceptions, and `src/features/<feature>/exceptions/index.ts` re-exports feature exceptions when multiple exist.
 
+### Step 8: Scan Postman Collection & Environment Synchronization (`docs/postman/`)
+
+1. **Missing Endpoints Audit**:
+   - Cross-reference every active route registered in `src/routes/router.ts` and `src/bootstrap/app.ts` against `docs/postman/ProxyGuard.postman_collection.json`.
+   - If any endpoint in the codebase is missing from the collection, flag as an **Architecture Violation** and add it immediately with schemas, auth headers, and assertions.
+2. **Stale / Deleted Endpoints Audit**:
+   - Verify that all endpoints in `docs/postman/ProxyGuard.postman_collection.json` actually exist in the codebase.
+   - If an endpoint was deleted or removed from code, flag as an **Architecture Violation** and delete it from the collection immediately.
+3. **Unused Environment Variables Audit**:
+   - Inspect all variables defined in `docs/postman/ProxyGuard.postman_environment.json` and `docs/postman/ProxyGuard.production.postman_environment.json`.
+   - If an environment variable is not referenced by any request in the Postman collection, or if the endpoint that used it was deleted, flag as an **Architecture Violation** and delete the variable from both environment files immediately.
+
 ---
 
 ## Detailed Audit Checklist
