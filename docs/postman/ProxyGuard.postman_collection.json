@@ -1,0 +1,1368 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+    "name": "ProxyGuard API",
+    "description": "# ProxyGuard API Collection\n\nComprehensive Postman collection for testing all endpoints of the **ProxyGuard** proxy management REST API.\n\n### Architectural Overview\nProxyGuard is a self-hosted Fastify 5 REST API built with TypeScript and the Aegis framework (`#aegis/*`). It handles:\n- API key generation and Argon2 authentication\n- ProxyScrape account hydration and async proxy synchronization\n- Sticky session proxy leasing and target-scoped ban mitigation\n\n### Variable Chaining & Automation\n1. Running **02 - API Keys > Request API Key** automatically stores `apiKeyId` and `apiKeySecret` in your environment.\n2. All subsequent requests in **ProxyScrape** and **Proxy Leasing** inherit these credentials.\n3. Running **04 - Proxy Leasing > Lease Proxy** automatically captures `endpointId` for use in the refresh/ban rotation test.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "apiKeyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "apiKeySecret",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "proxyScrapeSecret",
+      "value": "YOUR_PROXYSCRAPE_API_SECRET",
+      "type": "string"
+    },
+    {
+      "key": "targetUrl",
+      "value": "https://httpbin.org/ip",
+      "type": "string"
+    },
+    {
+      "key": "endpointId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "subAccountId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Health Check",
+      "description": "System health and status endpoints",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is under 500ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});",
+                  "",
+                  "pm.test(\"Health status is 'ok' with valid ISO timestamp\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an(\"object\");",
+                  "    pm.expect(jsonData.status).to.eql(\"ok\");",
+                  "    pm.expect(jsonData.timestamp).to.be.a(\"string\");",
+                  "    pm.expect(new Date(jsonData.timestamp).getTime()).to.be.greaterThan(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Returns the server health status and current ISO timestamp.\n\n- **Route:** `GET /health`\n- **Auth:** None\n- **Response:** `200 OK`"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"status\": \"ok\",\n  \"timestamp\": \"2026-10-24T11:34:00.000Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - API Keys",
+      "description": "API Key management endpoints",
+      "item": [
+        {
+          "name": "Request API Key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 Created\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response conforms to RequestApiKeyResponseSchema\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an(\"object\");",
+                  "    pm.expect(jsonData.id).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(jsonData.secret).to.be.a(\"string\").and.have.lengthOf(64);",
+                  "    pm.expect(jsonData.createdAt).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.updatedAt).to.be.a(\"string\");",
+                  "    pm.expect(new Date(jsonData.createdAt).getTime()).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "pm.test(\"Automatically store apiKeyId and apiKeySecret in variables\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.id && jsonData.secret) {",
+                  "        pm.environment.set(\"apiKeyId\", jsonData.id);",
+                  "        pm.environment.set(\"apiKeySecret\", jsonData.secret);",
+                  "        pm.collectionVariables.set(\"apiKeyId\", jsonData.id);",
+                  "        pm.collectionVariables.set(\"apiKeySecret\", jsonData.secret);",
+                  "        console.log(\"Stored apiKeyId:\", jsonData.id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/api-keys",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "api-keys"]
+            },
+            "description": "Generates a new API key pair (`id` and plain-text `secret`). The secret is hashed using Argon2 before persistence and returned once in plain text.\n\n- **Route:** `POST /api/v1/api-keys`\n- **Auth:** None\n- **Rate Limit:** 5 requests/min in dev (1 request/30min in prod)\n- **Response:** `201 Created`"
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/api-keys",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "api-keys"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"0192bf18-7b9c-7000-8484-878939c1c4f5\",\n  \"secret\": \"9a38f37bc44957e849281a8b9e671dcbf603b578c74a01c4e976db57fc7143e2\",\n  \"createdAt\": \"2026-10-24T11:34:00.000Z\",\n  \"updatedAt\": \"2026-10-24T11:34:00.000Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - ProxyScrape Integration",
+      "description": "ProxyScrape account hydration and proxy loading endpoints",
+      "item": [
+        {
+          "name": "Load Subaccounts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Response status is 200, 401, or 502\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 401, 502]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test(\"Subaccount payload schema validation\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        if (jsonData !== null) {",
+                  "            pm.expect(jsonData).to.have.property(\"AccountID\").that.is.a(\"string\");",
+                  "            pm.expect(jsonData).to.have.property(\"AccountType\").that.is.a(\"string\");",
+                  "            pm.expect(jsonData).to.have.property(\"label\").that.is.a(\"string\");",
+                  "            pm.expect(jsonData).to.have.property(\"is_hidden\").that.is.a(\"boolean\");",
+                  "            pm.expect(jsonData).to.have.property(\"time_added\").that.is.a(\"number\");",
+                  "            ",
+                  "            pm.environment.set(\"subAccountId\", jsonData.AccountID);",
+                  "            pm.collectionVariables.set(\"subAccountId\", jsonData.AccountID);",
+                  "            console.log(\"Saved subAccountId:\", jsonData.AccountID);",
+                  "        }",
+                  "    });",
+                  "} else {",
+                  "    pm.test(\"Aegis error schema is returned on upstream auth/network error\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property(\"statusCode\");",
+                  "        pm.expect(jsonData).to.have.property(\"errorCode\");",
+                  "        pm.expect(jsonData).to.have.property(\"message\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "api-key-id",
+                "value": "{{apiKeyId}}",
+                "type": "text",
+                "description": "API Key ID generated by POST /api/v1/api-keys"
+              },
+              {
+                "key": "api-key-secret",
+                "value": "{{apiKeySecret}}",
+                "type": "text",
+                "description": "API Key Secret generated by POST /api/v1/api-keys"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"secret\": \"{{proxyScrapeSecret}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/proxy-scrape/load-subaccounts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "proxy-scrape", "load-subaccounts"]
+            },
+            "description": "Submits a ProxyScrape API secret. Fetches account and subaccount details from ProxyScrape and dispatches background worker jobs to synchronize proxy endpoints into SQLite.\n\n- **Route:** `POST /api/v1/proxy-scrape/load-subaccounts`\n- **Auth:** Requires `api-key-id` and `api-key-secret`\n- **Response:** `200 OK` (with subaccount details or `null` if none found)"
+          },
+          "response": [
+            {
+              "name": "200 OK - Subaccount Loaded",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "api-key-id",
+                    "value": "{{apiKeyId}}"
+                  },
+                  {
+                    "key": "api-key-secret",
+                    "value": "{{apiKeySecret}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"secret\": \"{{proxyScrapeSecret}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy-scrape/load-subaccounts",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy-scrape", "load-subaccounts"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"AccountID\": \"sub_123456\",\n  \"AccountType\": \"datacenter_dedicated\",\n  \"label\": \"Datacenter Dedicated Pool\",\n  \"is_hidden\": false,\n  \"time_added\": 1729000000\n}"
+            },
+            {
+              "name": "401 Unauthorized - Invalid ProxyScrape Secret",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "api-key-id",
+                    "value": "{{apiKeyId}}"
+                  },
+                  {
+                    "key": "api-key-secret",
+                    "value": "{{apiKeySecret}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"secret\": \"invalid_token\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy-scrape/load-subaccounts",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy-scrape", "load-subaccounts"]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 401,\n  \"errorCode\": \"ERR_UNAUTHORIZED\",\n  \"message\": \"Invalid ProxyScrape API secret\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Proxy Leasing",
+      "description": "Proxy leasing, sticky session binding, and ban refreshment endpoints",
+      "item": [
+        {
+          "name": "Lease Proxy (Any Available)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK or 404 Not Found (if proxy pool is empty)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test(\"Proxy response adheres to ProxyItem schema\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property(\"id\").that.is.a(\"string\");",
+                  "        pm.expect(jsonData).to.have.property(\"address\").that.is.a(\"string\");",
+                  "        pm.expect(jsonData).to.have.property(\"username\").that.is.a(\"string\");",
+                  "        pm.expect(jsonData).to.have.property(\"password\").that.is.a(\"string\");",
+                  "        pm.expect(jsonData).to.have.property(\"proxy\").that.is.a(\"string\");",
+                  "        pm.expect(jsonData.proxy).to.include(jsonData.address);",
+                  "        ",
+                  "        pm.environment.set(\"endpointId\", jsonData.id);",
+                  "        pm.collectionVariables.set(\"endpointId\", jsonData.id);",
+                  "        console.log(\"Saved endpointId:\", jsonData.id);",
+                  "    });",
+                  "} else {",
+                  "    pm.test(\"404 Error has Aegis format and ERR_NOT_FOUND code\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.statusCode).to.eql(404);",
+                  "        pm.expect(jsonData.errorCode).to.eql(\"ERR_NOT_FOUND\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "api-key-id",
+                "value": "{{apiKeyId}}",
+                "type": "text"
+              },
+              {
+                "key": "api-key-secret",
+                "value": "{{apiKeySecret}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/proxy/lease",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "proxy", "lease"]
+            },
+            "description": "Leases an active proxy from the pool without domain binding.\n\n- **Route:** `PUT /api/v1/proxy/lease`\n- **Auth:** Requires `api-key-id` and `api-key-secret`\n- **Rate Limit:** 10 requests/min\n- **Response:** `200 OK` (with proxy details) or `404 Not Found` if no active accounts exist"
+          },
+          "response": [
+            {
+              "name": "200 OK - Leased Proxy",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "api-key-id",
+                    "value": "{{apiKeyId}}"
+                  },
+                  {
+                    "key": "api-key-secret",
+                    "value": "{{apiKeySecret}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy/lease",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy", "lease"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"0192bf18-7b9c-7000-8484-878939c1c4f6\",\n  \"address\": \"198.51.100.10:8080\",\n  \"username\": \"dc_user_123\",\n  \"password\": \"secure_password_abc\",\n  \"proxy\": \"http://dc_user_123:secure_password_abc@198.51.100.10:8080\"\n}"
+            },
+            {
+              "name": "404 Not Found - Pool Empty",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "api-key-id",
+                    "value": "{{apiKeyId}}"
+                  },
+                  {
+                    "key": "api-key-secret",
+                    "value": "{{apiKeySecret}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy/lease",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy", "lease"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 404,\n  \"errorCode\": \"ERR_NOT_FOUND\",\n  \"message\": \"No active proxy accounts found for API key\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Lease Proxy (Sticky Host Target)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK or 404 Not Found (if pool empty)\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test(\"Proxy leased for target host and sticky session created\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property(\"id\").that.is.a(\"string\");",
+                  "        pm.expect(jsonData).to.have.property(\"proxy\").that.is.a(\"string\");",
+                  "        ",
+                  "        pm.environment.set(\"endpointId\", jsonData.id);",
+                  "        pm.collectionVariables.set(\"endpointId\", jsonData.id);",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "api-key-id",
+                "value": "{{apiKeyId}}",
+                "type": "text"
+              },
+              {
+                "key": "api-key-secret",
+                "value": "{{apiKeySecret}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"{{targetUrl}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/proxy/lease",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "proxy", "lease"]
+            },
+            "description": "Leases a proxy sticky to the specified URL's hostname. Cached in Redis with a 60-second TTL to ensure repeated scrapes against the target domain use the same IP.\n\n- **Route:** `PUT /api/v1/proxy/lease`\n- **Auth:** Requires `api-key-id` and `api-key-secret`\n- **Response:** `200 OK`"
+          },
+          "response": [
+            {
+              "name": "200 OK - Sticky Leased Proxy",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "api-key-id",
+                    "value": "{{apiKeyId}}"
+                  },
+                  {
+                    "key": "api-key-secret",
+                    "value": "{{apiKeySecret}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://httpbin.org/ip\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy/lease",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy", "lease"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"0192bf18-7b9c-7000-8484-878939c1c4f6\",\n  \"address\": \"198.51.100.10:8080\",\n  \"username\": \"dc_user_123\",\n  \"password\": \"secure_password_abc\",\n  \"proxy\": \"http://dc_user_123:secure_password_abc@198.51.100.10:8080\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Proxy Lease & Report Ban",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK or 404 Not Found\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test(\"A fresh non-banned proxy was returned\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property(\"id\").that.is.a(\"string\");",
+                  "        pm.expect(jsonData).to.have.property(\"address\").that.is.a(\"string\");",
+                  "        pm.expect(jsonData).to.have.property(\"proxy\").that.is.a(\"string\");",
+                  "        ",
+                  "        // Endpoint should be updated",
+                  "        pm.environment.set(\"endpointId\", jsonData.id);",
+                  "        pm.collectionVariables.set(\"endpointId\", jsonData.id);",
+                  "    });",
+                  "} else {",
+                  "    pm.test(\"Aegis error schema is returned\", function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.statusCode).to.eql(404);",
+                  "        pm.expect(jsonData.errorCode).to.eql(\"ERR_NOT_FOUND\");",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "api-key-id",
+                "value": "{{apiKeyId}}",
+                "type": "text"
+              },
+              {
+                "key": "api-key-secret",
+                "value": "{{apiKeySecret}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"{{targetUrl}}\",\n  \"endpointId\": \"{{endpointId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/proxy/lease/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "proxy", "lease", "refresh"]
+            },
+            "description": "Evicts the current sticky IP session in Redis, persists a ban entry for `endpointId` against the URL's hostname in SQLite, and assigns a new non-banned proxy from the pool.\n\n- **Route:** `PUT /api/v1/proxy/lease/refresh`\n- **Auth:** Requires `api-key-id` and `api-key-secret`\n- **Response:** `200 OK` (with new proxy) or `404 Not Found` if endpoint does not exist or all proxies are banned"
+          },
+          "response": [
+            {
+              "name": "200 OK - Refreshed Proxy",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "api-key-id",
+                    "value": "{{apiKeyId}}"
+                  },
+                  {
+                    "key": "api-key-secret",
+                    "value": "{{apiKeySecret}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://httpbin.org/ip\",\n  \"endpointId\": \"0192bf18-7b9c-7000-8484-878939c1c4f6\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy/lease/refresh",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy", "lease", "refresh"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"0192bf18-7b9c-7000-8484-878939c1c4f7\",\n  \"address\": \"198.51.100.11:8080\",\n  \"username\": \"dc_user_123\",\n  \"password\": \"secure_password_abc\",\n  \"proxy\": \"http://dc_user_123:secure_password_abc@198.51.100.11:8080\"\n}"
+            },
+            {
+              "name": "404 Not Found - All Proxies Banned",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "api-key-id",
+                    "value": "{{apiKeyId}}"
+                  },
+                  {
+                    "key": "api-key-secret",
+                    "value": "{{apiKeySecret}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://httpbin.org/ip\",\n  \"endpointId\": \"0192bf18-7b9c-7000-8484-878939c1c4f6\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy/lease/refresh",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy", "lease", "refresh"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 404,\n  \"errorCode\": \"ERR_NOT_FOUND\",\n  \"message\": \"No available non-banned proxy found for target URL\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Security & Guard Verification",
+      "description": "Tests verifying authentication barriers and security guards",
+      "item": [
+        {
+          "name": "Auth - Missing Headers (403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test(\"Error code is ERR_FORBIDDEN with missing header message\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.statusCode).to.eql(403);",
+                  "    pm.expect(jsonData.errorCode).to.eql(\"ERR_FORBIDDEN\");",
+                  "    pm.expect(jsonData.message).to.eql(\"invalid api key or secret header provided\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/proxy/lease",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "proxy", "lease"]
+            },
+            "description": "Validates that omitting `api-key-id` or `api-key-secret` headers triggers an immediate 403 Forbidden response.\n\n- **Route:** `PUT /api/v1/proxy/lease`\n- **Expected Code:** `403 Forbidden`"
+          },
+          "response": [
+            {
+              "name": "403 Forbidden - Missing Headers",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy/lease",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy", "lease"]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 403,\n  \"errorCode\": \"ERR_FORBIDDEN\",\n  \"message\": \"invalid api key or secret header provided\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Auth - Invalid Secret (403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 403 Forbidden\", function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test(\"Error code is ERR_FORBIDDEN with invalid secret message\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.statusCode).to.eql(403);",
+                  "    pm.expect(jsonData.errorCode).to.eql(\"ERR_FORBIDDEN\");",
+                  "    pm.expect(jsonData.message).to.eql(\"invalid api key or secret\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "api-key-id",
+                "value": "{{apiKeyId}}",
+                "type": "text"
+              },
+              {
+                "key": "api-key-secret",
+                "value": "invalid_wrong_secret_1234567890abcdef",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/proxy/lease",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "proxy", "lease"]
+            },
+            "description": "Validates that submitting a valid `api-key-id` with an incorrect `api-key-secret` fails Argon2 verification and returns 403 Forbidden.\n\n- **Route:** `PUT /api/v1/proxy/lease`\n- **Expected Code:** `403 Forbidden`"
+          },
+          "response": [
+            {
+              "name": "403 Forbidden - Invalid Secret",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "api-key-id",
+                    "value": "{{apiKeyId}}"
+                  },
+                  {
+                    "key": "api-key-secret",
+                    "value": "invalid_wrong_secret_1234567890abcdef"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy/lease",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy", "lease"]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 403,\n  \"errorCode\": \"ERR_FORBIDDEN\",\n  \"message\": \"invalid api key or secret\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Validation & Error Handling",
+      "description": "Validation schema violations and 404 handler tests",
+      "item": [
+        {
+          "name": "Validation - Missing Required Body (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error code is VALIDATION_ERROR\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.statusCode).to.eql(400);",
+                  "    pm.expect(jsonData.errorCode).to.eql(\"VALIDATION_ERROR\");",
+                  "    pm.expect(jsonData).to.have.property(\"validation\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "api-key-id",
+                "value": "{{apiKeyId}}",
+                "type": "text"
+              },
+              {
+                "key": "api-key-secret",
+                "value": "{{apiKeySecret}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/proxy-scrape/load-subaccounts",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "proxy-scrape", "load-subaccounts"]
+            },
+            "description": "Submitting an empty object to `load-subaccounts` without the required `secret` field should fail TypeBox validation.\n\n- **Route:** `POST /api/v1/proxy-scrape/load-subaccounts`\n- **Expected Code:** `400 Bad Request`"
+          },
+          "response": [
+            {
+              "name": "400 Bad Request - Validation Error",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "api-key-id",
+                    "value": "{{apiKeyId}}"
+                  },
+                  {
+                    "key": "api-key-secret",
+                    "value": "{{apiKeySecret}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy-scrape/load-subaccounts",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy-scrape", "load-subaccounts"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 400,\n  \"errorCode\": \"VALIDATION_ERROR\",\n  \"message\": \"body must have required property 'secret'\",\n  \"validation\": [\n    {\n      \"keyword\": \"required\",\n      \"dataPath\": \"\",\n      \"schemaPath\": \"#/required\",\n      \"params\": {\n        \"missingProperty\": \"secret\"\n      },\n      \"message\": \"must have required property 'secret'\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Validation - Refresh Lease Missing endpointId (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Validation error reports missing endpointId\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.statusCode).to.eql(400);",
+                  "    pm.expect(jsonData.errorCode).to.eql(\"VALIDATION_ERROR\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "api-key-id",
+                "value": "{{apiKeyId}}",
+                "type": "text"
+              },
+              {
+                "key": "api-key-secret",
+                "value": "{{apiKeySecret}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/proxy/lease/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "proxy", "lease", "refresh"]
+            },
+            "description": "Calling `PUT /api/v1/proxy/lease/refresh` without `endpointId` triggers Fastify schema validation failure.\n\n- **Route:** `PUT /api/v1/proxy/lease/refresh`\n- **Expected Code:** `400 Bad Request`"
+          },
+          "response": [
+            {
+              "name": "400 Bad Request - Missing endpointId",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "api-key-id",
+                    "value": "{{apiKeyId}}"
+                  },
+                  {
+                    "key": "api-key-secret",
+                    "value": "{{apiKeySecret}}"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://example.com\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/proxy/lease/refresh",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "proxy", "lease", "refresh"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 400,\n  \"errorCode\": \"VALIDATION_ERROR\",\n  \"message\": \"body must have required property 'endpointId'\",\n  \"validation\": [\n    {\n      \"keyword\": \"required\",\n      \"dataPath\": \"\",\n      \"schemaPath\": \"#/required\",\n      \"params\": {\n        \"missingProperty\": \"endpointId\"\n      },\n      \"message\": \"must have required property 'endpointId'\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Route Not Found (404 Not Found)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404 Not Found\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Aegis NotFoundException format returned\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.statusCode).to.eql(404);",
+                  "    pm.expect(jsonData.errorCode).to.eql(\"ERR_NOT_FOUND\");",
+                  "    pm.expect(jsonData.message).to.include(\"not found\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/non-existent-endpoint",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "non-existent-endpoint"]
+            },
+            "description": "Tests Fastify's custom setNotFoundHandler which converts unmatched routes into an Aegis `NotFoundException`.\n\n- **Route:** `GET /api/v1/non-existent-endpoint`\n- **Expected Code:** `404 Not Found`"
+          },
+          "response": [
+            {
+              "name": "404 Not Found - Route Missing",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/non-existent-endpoint",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "v1", "non-existent-endpoint"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"statusCode\": 404,\n  \"errorCode\": \"ERR_NOT_FOUND\",\n  \"message\": \"Route GET:/api/v1/non-existent-endpoint not found\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
