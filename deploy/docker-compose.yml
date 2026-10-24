@@ -1,3 +1,5 @@
+name: proxyguard
+
 services:
   app:
     build:
