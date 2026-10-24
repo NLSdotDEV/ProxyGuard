@@ -103,6 +103,18 @@ If the feature defines domain-specific error conditions with dedicated error cod
    ```
 3. The `Router.define()` method registers `routes` with `api/v1`, and is mounted via `boostrap()` in `src/bootstrap/app.ts`.
 
+### Step 8: Synchronize Postman Collection & Environment (`docs/postman/`)
+
+1. **When Adding New Endpoints**:
+   - Add every newly registered route to `docs/postman/ProxyGuard.postman_collection.json` under the feature's folder.
+   - Configure method, path (`{{baseUrl}}/api/v1/<feature>/...`), headers (`Content-Type`, `Accept`, and `api-key-id`/`api-key-secret` if protected by guard), request body, and test script assertions (`pm.test`).
+   - If the endpoint introduces new environment variables, register them in `docs/postman/ProxyGuard.postman_environment.json` and `docs/postman/ProxyGuard.production.postman_environment.json`.
+2. **When Removing / Deleting Endpoints**:
+   - Delete the removed endpoint request item from `docs/postman/ProxyGuard.postman_collection.json`.
+   - If an entire feature is removed, delete the feature folder from the collection.
+3. **When Pruning Unused Variables**:
+   - If an environment variable is no longer referenced anywhere in `ProxyGuard.postman_collection.json`, or if the endpoint that used it was deleted, delete that variable from both `ProxyGuard.postman_environment.json` and `ProxyGuard.production.postman_environment.json`.
+
 ---
 
 ## Reference Templates

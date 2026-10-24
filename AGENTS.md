@@ -41,6 +41,7 @@ ProxyGuard/
 │       ├── service-creator/
 │       ├── queue-scaffolder/
 │       ├── exception-creator/
+│       ├── postman-sync/
 │       └── architecture-auditor/
 ├── src/
 │   ├── main.ts                       # Fastify initialization & server start
@@ -386,3 +387,40 @@ Route registration follows a strict hierarchy:
 - **ESM Imports**: All relative TypeScript imports must include the `.js` extension (e.g., `import { Router } from '../routes/router.js';`).
 - **Linter & Formatter**: Run `npm run lint` and `npm run format` after modifications.
 - **Type Safety**: Avoid using `any`. Use TypeBox `Static<typeof ...>` and strongly-typed Fastify request/reply objects.
+- **Postman Synchronization**: Every newly added endpoint MUST be added to `docs/postman/ProxyGuard.postman_collection.json`. Every removed endpoint MUST be deleted from the collection. Any environment variable that is no longer used or whose endpoint was deleted MUST be deleted from both local and production Postman environment files.
+
+---
+
+## 7. Postman Collection & Environment Synchronization Standards
+
+All endpoints in ProxyGuard are cataloged, documented, and tested via the Postman collection and environment files in `docs/postman/`:
+
+- `docs/postman/ProxyGuard.postman_collection.json`
+- `docs/postman/ProxyGuard.postman_environment.json`
+- `docs/postman/ProxyGuard.production.postman_environment.json`
+
+Every AI coding agent MUST strictly enforce synchronization between the codebase routes and the Postman files:
+
+### 7.1 When a New Endpoint is Added
+
+1. Add the endpoint to `docs/postman/ProxyGuard.postman_collection.json` under its designated feature folder.
+2. Configure:
+   - Method (`GET`, `POST`, `PUT`, `DELETE`, etc.) and full parameterized URL (`{{baseUrl}}/api/v1/...`).
+   - Headers: include `Content-Type: application/json`, `Accept: application/json`, and authentication headers (`api-key-id: {{apiKeyId}}`, `api-key-secret: {{apiKeySecret}}`) if guarded by `HasValidApiKeyGuard`.
+   - Request body schema and realistic JSON payload (mode: `"raw"`, language: `"json"`).
+   - Automated test scripts (`pm.test`) verifying status code, schema structure, and error cases.
+   - Dynamic variable chaining: if the endpoint creates/returns identifiers (e.g., keys, tokens, session IDs), set them via `pm.environment.set(...)` and `pm.collectionVariables.set(...)`.
+   - Sample responses (200/201 success and relevant 4xx/5xx error examples).
+3. If the new endpoint introduces a new environment variable or configurable parameter, add it to both `ProxyGuard.postman_environment.json` and `ProxyGuard.production.postman_environment.json`.
+
+### 7.2 When an Endpoint is Removed / Deleted
+
+1. Remove the endpoint item and any associated test cases or example responses from `docs/postman/ProxyGuard.postman_collection.json`.
+2. If an entire feature is deleted, remove its folder from the collection.
+3. Check all variables referenced by the deleted endpoint: if a variable is not used by any other endpoint in the collection, delete it from both environment files.
+
+### 7.3 Pruning Unused Environment Variables
+
+1. If an environment variable in `ProxyGuard.postman_environment.json` or `ProxyGuard.production.postman_environment.json` is not referenced by any request URL, header, body, or test script in `ProxyGuard.postman_collection.json`, it is considered orphaned.
+2. The agent MUST delete the unused variable from both environment files immediately.
+3. Never allow dead or obsolete environment variables to linger.
