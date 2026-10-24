@@ -2,21 +2,14 @@ import syncSubaccountProxiesProducer from './producers/sync-subaccount-proxies.p
 import syncSubaccountProxiesWorker from './workers/sync-subaccount-proxies.worker.js';
 import syncProxyEndpointsProducer from './producers/sync-proxy-endpoints.producer.js';
 import syncProxyEndpointsWorker from './workers/sync-proxy-endpoints.worker.js';
-import checkProxyAccountProducer from './producers/check-proxy-account.producer.js';
-import checkProxyAccountWorker from './workers/check-proxy-account.worker.js';
 
 export * from './constants.js';
 
-export const workers = [
-  syncSubaccountProxiesWorker,
-  syncProxyEndpointsWorker,
-  checkProxyAccountWorker,
-];
+export const workers = [syncSubaccountProxiesWorker, syncProxyEndpointsWorker];
 
 export const producers = [
   syncSubaccountProxiesProducer,
   syncProxyEndpointsProducer,
-  checkProxyAccountProducer,
 ];
 
 export async function closeAllJobs(): Promise<void> {

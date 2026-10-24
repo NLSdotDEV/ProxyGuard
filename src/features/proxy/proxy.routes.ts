@@ -40,18 +40,4 @@ export const ProxyRoutes: FastifyPluginAsync = async (fastify, _opts) => {
     },
     async (request, reply) => await proxyController.refresh(request, reply),
   );
-
-  fastify.put(
-    '/update',
-    {
-      config: rateLimitConfig,
-      schema: {
-        body: ProxySchema.update,
-        response: {
-          202: ProxySchema.updateResponse,
-        },
-      },
-    },
-    async (request, reply) => await proxyController.update(request, reply),
-  );
 };
