@@ -1,10 +1,10 @@
-name: proxyguard
+name: proxyguard-api
 services:
-  app:
+  api:
     build:
-      context: ..
-      dockerfile: Dockerfile
-    container_name: proxyguard-app
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: proxyguard-api
     restart: unless-stopped
     environment:
       - ENV=${ENV:-production}
@@ -22,7 +22,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    # Bound to host loopback interface only for Caddy reverse proxy (never exposed to public 0.0.0.0)
     ports:
       - '127.0.0.1:${APP_PORT:-3000}:3000'
 
@@ -44,28 +43,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    # Redis is completely internal to proxyguard-network (no host ports exposed)
-
-  caddy:
-    image: caddy:2-alpine
-    container_name: proxyguard-caddy
-    restart: unless-stopped
-    profiles:
-      - caddy
-    environment:
-      - UPSTREAM=app:3000
-    ports:
-      - '80:80'
-      - '443:443'
-      - '443:443/udp'
-    volumes:
-      - ./proxyguard.caddy:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    networks:
-      - proxyguard-network
-    depends_on:
-      - app
 
 networks:
   proxyguard-network:
@@ -76,8 +53,4 @@ volumes:
   app-storage:
     driver: local
   redis-data:
-    driver: local
-  caddy-data:
-    driver: local
-  caddy-config:
     driver: local

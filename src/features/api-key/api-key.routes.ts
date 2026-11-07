@@ -12,10 +12,7 @@ export const ApiKeyRoutes: FastifyPluginAsync = async (fastify, _opts) => {
         }
       },
       schema: {
-        response: {
-          200: ApiKeySchema.response,
-          201: ApiKeySchema.response,
-        },
+        body: ApiKeySchema.request
       },
       config: {
         rateLimit: {

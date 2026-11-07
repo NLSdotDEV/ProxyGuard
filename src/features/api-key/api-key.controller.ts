@@ -4,6 +4,7 @@ import requestApiKeyService, {
   RequestApiKeyService,
 } from './services/request-api-key.service.js';
 import { HttpStatusCode } from 'axios';
+import { RequestApiKeySchemaType } from './api-key.schema.js';
 
 export class ApiKeyController extends Controller {
   constructor(private readonly requestApiKeyService: RequestApiKeyService) {
@@ -11,7 +12,8 @@ export class ApiKeyController extends Controller {
   }
 
   async create(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const result = await this.requestApiKeyService.handle();
+    const { name } = request.body as RequestApiKeySchemaType;
+    const result = await this.requestApiKeyService.handle(name);
     reply.status(HttpStatusCode.Created).send(result);
   }
 }
