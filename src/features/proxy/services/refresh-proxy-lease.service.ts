@@ -40,7 +40,11 @@ export class RefreshProxyLeaseService {
     // Look up and ban the specified endpoint
     const endpointToBan = await em.findOne(ProxyEndpoint, {
       id: dto.endpointId,
-      proxy: { apiKey: dto.apiKeyId },
+      proxy: {
+        apiKey: {
+          id: dto.apiKeyId
+        }
+      },
     });
 
     if (!endpointToBan) {
@@ -54,13 +58,18 @@ export class RefreshProxyLeaseService {
       endpoint: endpointToBan,
     });
 
+    const bannedUntil = new Date(Date.now() + 5 * 60 * 60 * 1000);
+
     if (!existingBan) {
       em.create(ProxyBan, {
         hostTarget,
         endpoint: endpointToBan,
+        bannedUntil,
       });
-      await em.flush();
+    } else {
+      existingBan.bannedUntil = bannedUntil;
     }
+    await em.flush();
 
     // Load active accounts
     const accounts = await em.find(
@@ -78,8 +87,11 @@ export class RefreshProxyLeaseService {
       throw new NotFoundException('No active proxy accounts found for API key');
     }
 
-    // Filter out banned endpoints for this target
-    const bans = await em.find(ProxyBan, { hostTarget });
+    // Filter out active banned endpoints for this target
+    const bans = await em.find(ProxyBan, {
+      hostTarget,
+      $or: [{ bannedUntil: null }, { bannedUntil: { $gt: new Date() } }],
+    });
     const bannedEndpointIds = new Set(bans.map((b) => b.endpoint.id));
 
     const available: { endpoint: ProxyEndpoint; account: ProxyAccount }[] = [];
