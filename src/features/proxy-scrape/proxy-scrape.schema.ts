@@ -5,6 +5,12 @@ const LoadProxyScrapeSubAccountsSchema = Type.Object(
     secret: Type.String({
       description: 'The ProxyScrape API key or secret',
     }),
+    refresh: Type.Optional(
+      Type.Boolean({
+        default: false,
+        description: 'Force delete all exiting accounts',
+      }),
+    ),
   },
   {
     description: 'Request payload for loading ProxyScrape subaccounts',

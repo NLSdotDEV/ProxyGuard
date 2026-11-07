@@ -11,4 +11,7 @@ export class ProxyBan extends BaseEntity {
 
   @ManyToOne(() => ProxyEndpoint)
   endpoint!: Ref<ProxyEndpoint>;
+
+  @Property({ type: 'timestamp', name: 'banned_until', nullable: true })
+  bannedUntil?: Date | null;
 }
