@@ -4,6 +4,8 @@ import {
   UnauthorizedException,
 } from '../../../exceptions/index.js';
 import syncSubaccountProxiesProducer from '../../../jobs/producers/sync-subaccount-proxies.producer.js';
+import { em } from '../../../database/db.js';
+import { ProxyAccount } from '../../../database/entities/index.js';
 
 export interface ProxyScrapeSubAccount {
   AccountID: string;
@@ -16,6 +18,7 @@ export interface ProxyScrapeSubAccount {
 export interface LoadProxyScrapeSubAccountsDto {
   readonly secret: string;
   readonly apiKeyId: string;
+  readonly refresh?: boolean;
 }
 
 export class LoadProxyScrapeSubAccountsService {
@@ -39,6 +42,17 @@ export class LoadProxyScrapeSubAccountsService {
       const firstSubAccount = response.data?.data?.subaccounts?.[0];
       if (!firstSubAccount) {
         return null;
+      }
+
+      if (dto.refresh) {
+        const accounts = await em.find(
+          ProxyAccount,
+          { apiKey: dto.apiKeyId },
+          { populate: ['endpoints.bans'] },
+        );
+
+        em.remove(accounts);
+        await em.flush();
       }
 
       await syncSubaccountProxiesProducer.dispatch({

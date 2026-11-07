@@ -1,5 +1,5 @@
 import { BaseEntity } from '#aegis/database';
-import { Collection, Ref } from '@mikro-orm/core';
+import { Cascade, Collection, Ref } from '@mikro-orm/core';
 import {
   Property,
   Entity,
@@ -19,6 +19,8 @@ export class ProxyEndpoint extends BaseEntity {
   @ManyToOne(() => ProxyAccount)
   proxy!: Ref<ProxyAccount>;
 
-  @OneToMany(() => ProxyBan, (ban) => ban.endpoint)
+  @OneToMany(() => ProxyBan, (ban) => ban.endpoint, {
+    cascade: [Cascade.REMOVE],
+  })
   bans = new Collection<ProxyBan>(this);
 }
