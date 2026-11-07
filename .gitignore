@@ -8,6 +8,8 @@ build/
 # Environment
 .env
 .env.local
+.env.prod
+.env.production
 
 # Logs
 *.log
