@@ -36,7 +36,7 @@ export class LoadProxyScrapeSubAccountsService {
         headers: {
           'api-token': dto.secret,
         },
-        timeout: 10000,
+        timeout: 1000 * 6,
       });
 
       const firstSubAccount = response.data?.data?.subaccounts?.[0];
