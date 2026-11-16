@@ -1,18 +1,22 @@
 {
-  "namespaces": [],
+  "name": "public",
+  "namespaces": [
+    "public"
+  ],
   "tables": [
     {
       "name": "api_keys",
+      "schema": "public",
       "columns": {
         "created_at": {
           "name": "created_at",
-          "type": "datetime",
+          "type": "timestamptz(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 6,
           "precision": null,
           "scale": null,
           "default": null,
@@ -23,7 +27,7 @@
         },
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
           "primary": true,
@@ -36,51 +40,51 @@
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "uuid"
         },
         "name": {
           "name": "name",
-          "type": "text",
+          "type": "varchar(255)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": true,
           "unique": false,
-          "length": null,
+          "length": 255,
           "precision": null,
           "scale": null,
           "default": null,
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "string"
         },
         "secret": {
           "name": "secret",
-          "type": "text",
+          "type": "varchar(255)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 255,
           "precision": null,
           "scale": null,
           "default": null,
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "string"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "datetime",
+          "type": "timestamptz(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 6,
           "precision": null,
           "scale": null,
           "default": null,
@@ -97,7 +101,7 @@
           ],
           "composite": false,
           "constraint": true,
-          "keyName": "primary",
+          "keyName": "api_keys_pkey",
           "primary": true,
           "unique": true
         }
@@ -109,10 +113,11 @@
     },
     {
       "name": "proxy_accounts",
+      "schema": "public",
       "columns": {
         "api_key_id": {
           "name": "api_key_id",
-          "type": "text",
+          "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -125,17 +130,17 @@
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "uuid"
         },
         "created_at": {
           "name": "created_at",
-          "type": "datetime",
+          "type": "timestamptz(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 6,
           "precision": null,
           "scale": null,
           "default": null,
@@ -146,13 +151,13 @@
         },
         "expires_at": {
           "name": "expires_at",
-          "type": "datetime",
+          "type": "timestamptz(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 6,
           "precision": null,
           "scale": null,
           "default": null,
@@ -163,7 +168,7 @@
         },
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
           "primary": true,
@@ -176,34 +181,34 @@
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "uuid"
         },
         "password": {
           "name": "password",
-          "type": "text",
+          "type": "varchar(255)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 255,
           "precision": null,
           "scale": null,
           "default": null,
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "string"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "datetime",
+          "type": "timestamptz(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 6,
           "precision": null,
           "scale": null,
           "default": null,
@@ -214,20 +219,20 @@
         },
         "username": {
           "name": "username",
-          "type": "text",
+          "type": "varchar(255)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": true,
-          "length": null,
+          "length": 255,
           "precision": null,
           "scale": null,
           "default": null,
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "string"
         }
       },
       "indexes": [
@@ -237,19 +242,9 @@
           ],
           "composite": false,
           "constraint": true,
-          "keyName": "primary",
+          "keyName": "proxy_accounts_pkey",
           "primary": true,
           "unique": true
-        },
-        {
-          "columnNames": [
-            "api_key_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "proxy_accounts_api_key_id_index",
-          "primary": false,
-          "unique": false
         },
         {
           "columnNames": [
@@ -271,27 +266,28 @@
             "api_key_id"
           ],
           "constraintName": "proxy_accounts_api_key_id_foreign",
-          "localTableName": "proxy_accounts",
+          "localTableName": "public.proxy_accounts",
           "referencedColumnNames": [
             "id"
           ],
-          "referencedTableName": "api_keys"
+          "referencedTableName": "public.api_keys"
         }
       },
       "comment": null
     },
     {
       "name": "proxy_bans",
+      "schema": "public",
       "columns": {
         "banned_until": {
           "name": "banned_until",
-          "type": "datetime",
+          "type": "timestamptz(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": true,
           "unique": false,
-          "length": null,
+          "length": 6,
           "precision": null,
           "scale": null,
           "default": null,
@@ -302,13 +298,13 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "datetime",
+          "type": "timestamptz(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 6,
           "precision": null,
           "scale": null,
           "default": null,
@@ -319,7 +315,7 @@
         },
         "endpoint_id": {
           "name": "endpoint_id",
-          "type": "text",
+          "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -332,28 +328,28 @@
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "uuid"
         },
         "host_target": {
           "name": "host_target",
-          "type": "text",
+          "type": "varchar(255)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": true,
-          "length": null,
+          "length": 255,
           "precision": null,
           "scale": null,
           "default": null,
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "string"
         },
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
           "primary": true,
@@ -366,17 +362,17 @@
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "uuid"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "datetime",
+          "type": "timestamptz(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 6,
           "precision": null,
           "scale": null,
           "default": null,
@@ -389,26 +385,6 @@
       "indexes": [
         {
           "columnNames": [
-            "id"
-          ],
-          "composite": false,
-          "constraint": true,
-          "keyName": "primary",
-          "primary": true,
-          "unique": true
-        },
-        {
-          "columnNames": [
-            "endpoint_id"
-          ],
-          "composite": false,
-          "constraint": false,
-          "keyName": "proxy_bans_endpoint_id_index",
-          "primary": false,
-          "unique": false
-        },
-        {
-          "columnNames": [
             "host_target",
             "endpoint_id"
           ],
@@ -416,6 +392,16 @@
           "constraint": true,
           "keyName": "proxy_bans_host_target_endpoint_id_unique",
           "primary": false,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "proxy_bans_pkey",
+          "primary": true,
           "unique": true
         }
       ],
@@ -427,44 +413,45 @@
             "endpoint_id"
           ],
           "constraintName": "proxy_bans_endpoint_id_foreign",
-          "localTableName": "proxy_bans",
+          "localTableName": "public.proxy_bans",
           "referencedColumnNames": [
             "id"
           ],
-          "referencedTableName": "proxy_endpoints"
+          "referencedTableName": "public.proxy_endpoints"
         }
       },
       "comment": null
     },
     {
       "name": "proxy_endpoints",
+      "schema": "public",
       "columns": {
         "address": {
           "name": "address",
-          "type": "text",
+          "type": "varchar(255)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": true,
-          "length": null,
+          "length": 255,
           "precision": null,
           "scale": null,
           "default": null,
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "string"
         },
         "created_at": {
           "name": "created_at",
-          "type": "datetime",
+          "type": "timestamptz(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 6,
           "precision": null,
           "scale": null,
           "default": null,
@@ -475,7 +462,7 @@
         },
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
           "primary": true,
@@ -488,11 +475,11 @@
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "uuid"
         },
         "proxy_id": {
           "name": "proxy_id",
-          "type": "text",
+          "type": "uuid",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
@@ -505,17 +492,17 @@
           "comment": null,
           "collation": null,
           "enumItems": [],
-          "mappedType": "text"
+          "mappedType": "uuid"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "datetime",
+          "type": "timestamptz(6)",
           "unsigned": false,
           "autoincrement": false,
           "primary": false,
           "nullable": false,
           "unique": false,
-          "length": null,
+          "length": 6,
           "precision": null,
           "scale": null,
           "default": null,
@@ -526,16 +513,6 @@
         }
       },
       "indexes": [
-        {
-          "columnNames": [
-            "id"
-          ],
-          "composite": false,
-          "constraint": true,
-          "keyName": "primary",
-          "primary": true,
-          "unique": true
-        },
         {
           "columnNames": [
             "address",
@@ -549,13 +526,13 @@
         },
         {
           "columnNames": [
-            "proxy_id"
+            "id"
           ],
           "composite": false,
-          "constraint": false,
-          "keyName": "proxy_endpoints_proxy_id_index",
-          "primary": false,
-          "unique": false
+          "constraint": true,
+          "keyName": "proxy_endpoints_pkey",
+          "primary": true,
+          "unique": true
         }
       ],
       "checks": [],
@@ -566,11 +543,11 @@
             "proxy_id"
           ],
           "constraintName": "proxy_endpoints_proxy_id_foreign",
-          "localTableName": "proxy_endpoints",
+          "localTableName": "public.proxy_endpoints",
           "referencedColumnNames": [
             "id"
           ],
-          "referencedTableName": "proxy_accounts"
+          "referencedTableName": "public.proxy_accounts"
         }
       },
       "comment": null

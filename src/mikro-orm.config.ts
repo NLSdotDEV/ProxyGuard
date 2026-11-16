@@ -9,6 +9,8 @@ import {
   ProxyBan,
   ProxyEndpoint,
 } from './database/entities/index.js';
+import dotenv from "dotenv";
+dotenv.config()
 
 const dbName = process.env.DB_NAME ?? 'proxyguard';
 const host = process.env.DB_HOST ?? "localhost";
