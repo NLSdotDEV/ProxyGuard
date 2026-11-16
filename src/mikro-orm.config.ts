@@ -1,8 +1,8 @@
 import { defineConfig } from '@mikro-orm/core';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
-import { SqliteDriver } from '@mikro-orm/sqlite';
 import { SeedManager } from '@mikro-orm/seeder';
 import { Migrator } from '@mikro-orm/migrations';
+import { PostgreSqlDriver } from "@mikro-orm/postgresql"
 import {
   ApiKey,
   ProxyAccount,
@@ -10,11 +10,21 @@ import {
   ProxyEndpoint,
 } from './database/entities/index.js';
 
+const dbName = process.env.DB_NAME ?? 'proxyguard';
+const host = process.env.DB_HOST ?? "localhost";
+const port = parseInt(process.env.DB_PORT ?? "5432");
+const user = process.env.DB_USER;
+const password = process.env.DB_PASSWORD
+
 export default defineConfig({
-  dbName: 'src/storage/db.sqlite',
+  dbName,
+  host,
+  port,
+  user,
+  password,
   metadataProvider: TsMorphMetadataProvider,
   metadataCache: { pretty: true },
-  driver: SqliteDriver,
+  driver: PostgreSqlDriver,
   migrations: {
     pathTs: './src/database/migrations',
     path: './build/database/migrations',
