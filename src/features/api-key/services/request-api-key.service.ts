@@ -20,7 +20,7 @@ export class RequestApiKeyService {
     const hashedSecret = await argon2.hash(plainTextSecret);
     const apiKey = em.create(ApiKey, {
       secret: hashedSecret,
-      name
+      name,
     });
 
     await em.flush();

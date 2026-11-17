@@ -1,12 +1,11 @@
 import { Type, type Static } from 'typebox';
 
-
 const RequestApiKeySchema = Type.Object({
-  name: Type.Optional(Type.String())
-})
+  name: Type.Optional(Type.String()),
+});
 
 export const ApiKeySchema = {
-  request: RequestApiKeySchema
+  request: RequestApiKeySchema,
 };
 
 export type RequestApiKeySchemaType = Static<typeof RequestApiKeySchema>;
