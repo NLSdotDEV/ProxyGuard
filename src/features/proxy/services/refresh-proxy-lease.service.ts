@@ -42,8 +42,8 @@ export class RefreshProxyLeaseService {
       id: dto.endpointId,
       proxy: {
         apiKey: {
-          id: dto.apiKeyId
-        }
+          id: dto.apiKeyId,
+        },
       },
     });
 

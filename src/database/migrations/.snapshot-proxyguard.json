@@ -1,8 +1,6 @@
 {
   "name": "public",
-  "namespaces": [
-    "public"
-  ],
+  "namespaces": ["public"],
   "tables": [
     {
       "name": "api_keys",
@@ -96,9 +94,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "keyName": "api_keys_pkey",
@@ -237,9 +233,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "keyName": "proxy_accounts_pkey",
@@ -247,10 +241,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "username",
-            "password"
-          ],
+          "columnNames": ["username", "password"],
           "composite": true,
           "constraint": true,
           "keyName": "proxy_accounts_username_password_unique",
@@ -262,14 +253,10 @@
       "triggers": [],
       "foreignKeys": {
         "proxy_accounts_api_key_id_foreign": {
-          "columnNames": [
-            "api_key_id"
-          ],
+          "columnNames": ["api_key_id"],
           "constraintName": "proxy_accounts_api_key_id_foreign",
           "localTableName": "public.proxy_accounts",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "public.api_keys"
         }
       },
@@ -384,10 +371,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "host_target",
-            "endpoint_id"
-          ],
+          "columnNames": ["host_target", "endpoint_id"],
           "composite": true,
           "constraint": true,
           "keyName": "proxy_bans_host_target_endpoint_id_unique",
@@ -395,9 +379,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "keyName": "proxy_bans_pkey",
@@ -409,14 +391,10 @@
       "triggers": [],
       "foreignKeys": {
         "proxy_bans_endpoint_id_foreign": {
-          "columnNames": [
-            "endpoint_id"
-          ],
+          "columnNames": ["endpoint_id"],
           "constraintName": "proxy_bans_endpoint_id_foreign",
           "localTableName": "public.proxy_bans",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "public.proxy_endpoints"
         }
       },
@@ -514,10 +492,7 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "address",
-            "proxy_id"
-          ],
+          "columnNames": ["address", "proxy_id"],
           "composite": true,
           "constraint": true,
           "keyName": "proxy_endpoints_address_proxy_id_unique",
@@ -525,9 +500,7 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "id"
-          ],
+          "columnNames": ["id"],
           "composite": false,
           "constraint": true,
           "keyName": "proxy_endpoints_pkey",
@@ -539,14 +512,10 @@
       "triggers": [],
       "foreignKeys": {
         "proxy_endpoints_proxy_id_foreign": {
-          "columnNames": [
-            "proxy_id"
-          ],
+          "columnNames": ["proxy_id"],
           "constraintName": "proxy_endpoints_proxy_id_foreign",
           "localTableName": "public.proxy_endpoints",
-          "referencedColumnNames": [
-            "id"
-          ],
+          "referencedColumnNames": ["id"],
           "referencedTableName": "public.proxy_accounts"
         }
       },

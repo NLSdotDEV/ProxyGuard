@@ -6,15 +6,22 @@ services:
       dockerfile: docker/Dockerfile
     container_name: proxyguard-api
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - ENV=${ENV:-production}
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=3000
       - HOST=0.0.0.0
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - PROXY_SCRAPE_BASE_API_URL=${PROXY_SCRAPE_BASE_API_URL:-https://api.proxyscrape.com/v4}
+      - DB_NAME=${DB_NAME:-proxyguard}
+      - DB_HOST=${DB_HOST:-localhost}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-}
+      - DB_PASSWORD=${DB_PASSWORD:-}
     volumes:
       - app-storage:/app/src/storage
     networks:
